@@ -22,7 +22,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro
+from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, x402
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -230,6 +230,22 @@ def api_anclar(pin: str = Form(...)):
     return {k: v for k, v in a.items() if k != "ots_b64"}
 
 
+def orden_x402(d) -> dict | None:
+    # shortcut: usa la billetera del mandato vigente, no la de la versión con que se decidió; guardarla si el mandato cambia seguido
+    prov = next((p for p in mod_mandato.cargar().proveedores_permitidos if p.id == d.proveedor_id), None)
+    return x402.orden(d, prov)
+
+
+@app.get("/api/decisiones/{id_}/x402", operation_id="orden_x402",
+         summary="Orden de pago x402 (v2, USDC en Base Sepolia) SIMULADA para una decisión PAGAR: sin firmar y sin enviar")
+def api_orden_x402(id_: int):
+    d = registro.obtener(id_)
+    orden = orden_x402(d) if d else None
+    if orden is None:
+        raise HTTPException(404, "esta decisión no tiene orden x402: no es PAGAR o el proveedor no acepta USDC")
+    return orden
+
+
 @app.get("/api/decisiones", operation_id="decisiones", summary="Registro de decisiones con controles, JEV y explicación (cuentas enmascaradas)")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
@@ -406,7 +422,7 @@ def detalle(request: Request, id_: int):
     d = registro.obtener(id_)
     if d is None:
         raise HTTPException(404, "decisión no encontrada")
-    return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_))
+    return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_), orden=orden_x402(d))
 
 
 @app.get("/pendientes", response_class=HTMLResponse, include_in_schema=False)

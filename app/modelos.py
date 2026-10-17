@@ -71,6 +71,7 @@ class Proveedor(Estricto):
     banco: str
     cuenta: str
     acepta_usdc: bool = False
+    billetera_usdc: str | None = Field(None, pattern=r"^0x[0-9a-fA-F]{40}$")  # destino de una orden x402 (simulada)
     dominio_correo: str | None = None
 
 

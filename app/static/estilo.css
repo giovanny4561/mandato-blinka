@@ -155,6 +155,8 @@ p { margin: 0; }
 .flujo__paso--pagar { background: var(--verde-suave); }
 .flujo__paso--escalar { background: var(--ambar-suave); }
 .flujo__paso--frenar { background: var(--rojo-suave); }
+.x402 { padding: 18px 22px; display: grid; gap: 12px; justify-items: start; }
+.ficha--plana { box-shadow: none; width: 100%; background: var(--hundido); }
 .flujo__nota { margin-top: 8px; font-size: .8125rem; }
 .ficha { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); overflow: hidden; }
 .ficha > div { padding: 14px 18px; box-shadow: inset -1px -1px 0 var(--linea); min-width: 0; }

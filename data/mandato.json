@@ -21,13 +21,13 @@
      "moneda": "USD", "banco": "Bancolombia", "cuenta": "03100190193", "acepta_usdc": false,
      "dominio_correo": "nubeandina.co"},
     {"id": "PRV-002", "nombre": "Pixel Forge LLC", "tax_id": "87-1234567", "pais": "US",
-     "moneda": "USD", "banco": "Mercury", "cuenta": "202411778821", "acepta_usdc": true,
+     "moneda": "USD", "banco": "Mercury", "cuenta": "202411778821", "acepta_usdc": true, "billetera_usdc": "0x4f05b711c54a7f406c099bad45cc1893dd5dfba5",
      "dominio_correo": "pixelforge.io"},
     {"id": "PRV-003", "nombre": "Logística Sur SpA", "tax_id": "76543210-9", "pais": "CL",
      "moneda": "USD", "banco": "Banco de Chile", "cuenta": "00123456789", "acepta_usdc": false,
      "dominio_correo": "logisticasur.cl"},
     {"id": "PRV-004", "nombre": "Carla Ríos", "tax_id": "RIOC850101XY1", "pais": "MX",
-     "moneda": "USD", "banco": "BBVA México", "cuenta": "012180001234567890", "acepta_usdc": true,
+     "moneda": "USD", "banco": "BBVA México", "cuenta": "012180001234567890", "acepta_usdc": true, "billetera_usdc": "0x51ca08facab60690414bf6eca2e2902c2bdcaf3a",
      "dominio_correo": null}
   ],
   "acuerdos": [

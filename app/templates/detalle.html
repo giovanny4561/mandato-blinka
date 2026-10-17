@@ -28,7 +28,7 @@
     <li class="flujo__paso"><span class="flujo__titulo">{{ d.reglas|length }} controles</span>
       <span class="flujo__dato">{% if objetan %}{{ objetan|length }} con objeción{% else %}Todos en orden{% endif %}</span></li>
     <li class="flujo__paso flujo__paso--{{ d.decision|lower }}"><span class="flujo__titulo">{{ {'PAGAR': 'Pagar', 'ESCALAR': 'Escalar a una persona', 'FRENAR': 'Frenar'}[d.decision] }}</span>
-      <span class="flujo__dato">{% if decisiva %}Control decisivo: {{ decisiva.regla_id }} · {{ decisiva.nombre }}{% else %}Ningún control objetó{% endif %}</span></li>
+      <span class="flujo__dato">{% if decisiva %}Control decisivo: {{ decisiva.regla_id }} · {{ decisiva.nombre }}{% else %}Ningún control objetó{% endif %}{% if d.riel_sugerido %} · {{ d.riel_sugerido }}{% endif %}</span></li>
     {% if accion %}<li class="flujo__paso flujo__paso--{{ accion.decision|lower }}"><span class="flujo__titulo">{{ 'Aprobada' if accion.decision == 'PAGAR' else 'Rechazada' }} por una persona</span>
       <span class="flujo__dato">{{ accion.ts|hora }} · <a class="enlace" href="/decisiones/{{ accion.id }}">#{{ accion.id }}</a></span></li>{% endif %}
   </ol>
@@ -94,6 +94,25 @@
     <ol class="controles controles--en-orden">{% for r in en_orden %}{{ control(r) }}{% endfor %}</ol>
   </details>
 </section>
+
+{% if orden %}
+<section aria-labelledby="t-x402">
+  <div class="seccion-cabeza">
+    <h2 id="t-x402">Orden de pago x402</h2>
+    <span class="estado estado--escalar">Simulada: sin firmar y sin enviar</span>
+  </div>
+  <div class="tarjeta x402">
+    <dl class="ficha ficha--plana">
+      <div><dt>Monto</dt><dd>{{ d.extraccion.monto_total|monto('USDC') }}</dd></div>
+      <div><dt>Red</dt><dd>Base Sepolia (pruebas)</dd></div>
+      <div class="ficha__doble"><dt>Destino</dt><dd><code>{{ orden.accepted.payTo }}</code></dd></div>
+    </dl>
+    <p class="tenue">El mandato dijo PAGAR y {{ d.extraccion.proveedor_nombre }} acepta USDC, así que Mandato arma la orden en el formato v2 de x402. Una billetera con permiso del mandato la firmaría (EIP-3009) y un facilitador la liquidaría. Aquí se detiene: el reto excluye mover dinero. El nonce sale del sello de esta decisión, así que la misma orden no se puede cobrar dos veces.</p>
+    <details><summary>Ver el JSON</summary><pre>{{ orden|tojson(indent=1) }}</pre></details>
+    <a class="enlace" href="/api/decisiones/{{ d.id }}/x402">/api/decisiones/{{ d.id }}/x402</a>
+  </div>
+</section>
+{% endif %}
 
 {% if d.jev %}
 <section aria-labelledby="t-jev">
