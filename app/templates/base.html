@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..650&display=swap">
-  <link rel="stylesheet" href="/static/estilo.css">
+  <link rel="stylesheet" href="/static/estilo.css?v={{ v }}">
 </head>
 <body>
   <svg width="0" height="0" class="sprite" aria-hidden="true">
@@ -27,6 +27,7 @@
       <nav class="nav" aria-label="Principal">
         {% set actual = request.url.path %}
         <a href="/" {% if actual == '/' %}aria-current="page"{% endif %}>Panel</a>
+        <a href="/en-vivo" {% if actual == '/en-vivo' %}aria-current="page"{% endif %}>En vivo</a>
         <a href="/decisiones" {% if actual.startswith('/decisiones') %}aria-current="page"{% endif %}>Decisiones</a>
         <a href="/pendientes" {% if actual == '/pendientes' %}aria-current="page"{% endif %}>Pendientes{% if n_pendientes() %} <span class="contador">{{ n_pendientes() }}</span>{% endif %}</a>
         <a href="/mandato" {% if actual == '/mandato' %}aria-current="page"{% endif %}>Mandato</a>

@@ -100,7 +100,7 @@ def test_demo_procesa_en_segundo_plano(simulados, entorno):
         assert "2 facturas" in c.get("/bandeja").text
         assert c.post("/bandeja/demo", data={"pin": "nope"}).status_code == 403
         r = c.post("/bandeja/demo", data={"pin": "123456"}, follow_redirects=False)
-        assert r.status_code == 303
+        assert r.status_code == 303 and r.headers["location"].startswith("/en-vivo?t=")
         assert registro.metricas()["total"] == 2  # TestClient ejecuta las tareas de fondo al responder
 
 
@@ -126,3 +126,29 @@ def test_pin_de_ejemplo_o_corto_deshabilita_todo(monkeypatch):
         with TestClient(app) as c:
             r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": malo, "nota": ""})
             assert r.status_code in (403, 422)  # 422 cuando el PIN llega vacío: igual de cerrado
+
+
+def test_trabajo_en_vivo_emite_eventos_y_registra(simulados):
+    with TestClient(app) as c:
+        assert c.post("/api/trabajos", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "mal"}).status_code == 403
+        r = c.post("/api/trabajos", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "123456"})
+        assert r.status_code == 200
+        tid = r.json()["trabajo"]
+        cuerpo = c.get(f"/api/trabajos/{tid}/eventos").text
+        tipos = [json.loads(l[6:])["tipo"] for l in cuerpo.splitlines() if l.startswith("data: ")]
+        assert tipos == ["inicio", "recibida", "leida", "decidida", "fin"]
+        decidida = [json.loads(l[6:]) for l in cuerpo.splitlines() if '"decidida"' in l][0]
+        assert decidida["decision"] == "PAGAR" and len(decidida["reglas"]) == 18
+        assert registro.metricas()["total"] == 1
+        assert c.get("/api/trabajos/nope/eventos").status_code == 404
+
+
+def test_repeticion_no_llama_modelos_y_respeta_el_orden(monkeypatch):
+    registro.insertar(hacer_decision())
+    registro.insertar(hacer_decision(decision="FRENAR", regla_decisiva="R02", archivo="F08.pdf"))
+    monkeypatch.setattr(extractor, "extraer", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no debe leer")))
+    with TestClient(app) as c:
+        cuerpo = c.get("/api/repeticion?ritmo=0.2").text
+        decididas = [json.loads(l[6:]) for l in cuerpo.splitlines() if '"decidida"' in l]
+        assert [d["decision"] for d in decididas] == ["PAGAR", "FRENAR"]
+        assert "En vivo" in c.get("/en-vivo").text

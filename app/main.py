@@ -1,4 +1,5 @@
 """Mandato — FastAPI: panel, mandato, bandeja, decisiones, pendientes y /api."""
+import asyncio
 import hmac
 import json
 import logging
@@ -11,13 +12,13 @@ from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import config, decisor, documentos, extractor, motor, registro
+from app import config, decisor, documentos, extractor, flujo, motor, registro
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -60,6 +61,7 @@ plantillas.env.filters["hora"] = hora_local
 plantillas.env.filters["enmascarar"] = lambda v: f"****{str(v)[-4:]}" if v else "—"
 plantillas.env.filters["sin_veredicto"] = lambda t: re.sub(r"^(PAGAR|ESCALAR|FRENAR) · ", "", t or "")
 plantillas.env.globals["n_pendientes"] = lambda: len(registro.pendientes())
+plantillas.env.globals["v"] = str(int((APP_DIR / "static" / "estilo.css").stat().st_mtime))  # rompe la caché de estáticos al desplegar
 
 EXTENSIONES = {".pdf", ".png", ".jpg", ".jpeg", ".eml", ".txt"}
 MAX_BYTES = 5 * 1024 * 1024
@@ -117,21 +119,25 @@ def archivos_demo() -> list[Path]:
     return sorted(p for p in carpeta.glob("*") if p.suffix.lower() in EXTENSIONES) if carpeta.exists() else []
 
 
-def correr_demo() -> None:
-    if not _demo.acquire(blocking=False):
-        return
+def docs_demo_pendientes() -> list[Documento]:
+    """La demo es idempotente: solo las facturas del set que todavía no están en el registro."""
+    vistos = {h.factura_hash for h in registro.historial()}
+    docs = [documentos.cargar_archivo(r) for r in archivos_demo()]
+    return [d for d in docs if d.hash not in vistos]
+
+
+def correr_demo(trabajo: flujo.Trabajo, docs: list[Documento]) -> None:
     try:
-        vistos = {h.factura_hash for h in registro.historial()}
-        for ruta in archivos_demo():
-            doc = documentos.cargar_archivo(ruta)
-            if doc.hash in vistos:  # la demo es idempotente: no reprocesa lo que ya está
-                continue
-            try:
-                procesar(doc)
-            except Exception:
-                logging.exception("demo: falló %s", ruta.name)
+        flujo.procesar_lote(trabajo, docs, _decidiendo)
     finally:
         _demo.release()
+
+
+SSE = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"}
+
+
+def sse(evento: dict) -> str:
+    return f"data: {json.dumps(evento, ensure_ascii=False)}\n\n"
 
 
 def consumido_mes(m: Mandato) -> float:
@@ -155,6 +161,59 @@ def api_metricas():
 @app.get("/api/decisiones")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
+
+
+@app.post("/api/trabajos")
+async def api_trabajo(tareas: BackgroundTasks, archivo: UploadFile, pin: str = Form(...)):
+    """Sube una factura y devuelve un trabajo cuyo progreso se sigue por SSE en /api/trabajos/{id}/eventos."""
+    exigir_pin(pin)
+    doc = await leer_subida(archivo)
+    t = flujo.crear(1)
+    tareas.add_task(flujo.procesar_lote, t, [doc], _decidiendo)
+    return JSONResponse({"trabajo": t.id})
+
+
+@app.get("/api/trabajos/{id_}/eventos")
+async def api_eventos(id_: str):
+    t = flujo.obtener(id_)
+    if t is None:
+        raise HTTPException(404, "trabajo no encontrado")
+
+    async def fuente():
+        yield sse({"tipo": "inicio", "total": t.total, "modo": "vivo"})
+        i = 0
+        while True:
+            nuevos, fin = await asyncio.to_thread(t.esperar, i, 10.0)
+            for ev in nuevos:
+                yield sse(ev)
+            i += len(nuevos)
+            if fin and i >= len(t.eventos):
+                yield sse({"tipo": "fin"})
+                return
+            if not nuevos:
+                yield ": sigo aquí\n\n"
+
+    return StreamingResponse(fuente(), media_type="text/event-stream", headers=SSE)
+
+
+@app.get("/api/repeticion")
+async def api_repeticion(ritmo: float = Query(0.7, ge=0.2, le=3.0)):
+    """Reproduce las decisiones registradas como si llegaran en vivo. No llama a ningún modelo ni gasta créditos."""
+    decisiones = flujo.repeticion()
+
+    async def fuente():
+        yield sse({"tipo": "inicio", "total": len(decisiones), "modo": "repeticion"})
+        for i, d in enumerate(decisiones):
+            yield sse({"tipo": "recibida", "i": i, "archivo": d.archivo, "canal": d.canal})
+            await asyncio.sleep(ritmo * 0.35)
+            yield sse({"tipo": "leida", "i": i, "consistente": d.consistente, "proveedor": d.extraccion.proveedor_nombre,
+                       "numero": d.extraccion.numero_factura, "jev_ms": d.jev.latencia_ms if d.jev else None})
+            await asyncio.sleep(ritmo * 0.25)
+            yield sse({"tipo": "decidida", "i": i, **flujo.resumen(d, d.id)})
+            await asyncio.sleep(ritmo * 0.6)
+        yield sse({"tipo": "fin"})
+
+    return StreamingResponse(fuente(), media_type="text/event-stream", headers=SSE)
 
 
 @app.post("/api/procesar")
@@ -226,8 +285,18 @@ async def subir(archivo: UploadFile, pin: str = Form(...)):
 @app.post("/bandeja/demo")
 def demo(tareas: BackgroundTasks, pin: str = Form(...)):
     exigir_pin(pin)
-    tareas.add_task(correr_demo)
-    return RedirectResponse("/bandeja", status_code=303)
+    if not _demo.acquire(blocking=False):
+        return RedirectResponse("/en-vivo", status_code=303)
+    docs = docs_demo_pendientes()
+    t = flujo.crear(len(docs))
+    tareas.add_task(correr_demo, t, docs)
+    return RedirectResponse(f"/en-vivo?t={t.id}", status_code=303)
+
+
+@app.get("/en-vivo", response_class=HTMLResponse)
+def en_vivo(request: Request, t: str | None = None):
+    return render(request, "en_vivo.html", trabajo=t if t and flujo.obtener(t) else None,
+                  n_registro=len(flujo.repeticion()), n_demo=len(archivos_demo()))
 
 
 @app.get("/decisiones", response_class=HTMLResponse)

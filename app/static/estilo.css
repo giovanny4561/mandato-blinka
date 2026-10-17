@@ -252,3 +252,29 @@ tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   .boton, .nav a, .mov, input { transition: none; }
 }
+
+/* En vivo: red de decisión animada */
+.vivo { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.vivo__red { padding: 18px 18px 14px; display: grid; gap: 10px; }
+.vivo__barra { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.vivo__modo { font-weight: 520; }
+#red { width: 100%; height: auto; display: block; }
+.arista { stroke: rgba(28, 37, 58, .08); stroke-width: 1.2; }
+.nodo__circulo { fill: #fff; stroke: rgba(28, 37, 58, .22); stroke-width: 1.5; }
+.nodo__texto { font: 500 17px var(--fuente); fill: var(--tinta-2); }
+.nodo__texto--dentro { font: 600 11.5px var(--mono); fill: var(--tinta); pointer-events: none; }
+.pulso { filter: drop-shadow(0 1px 2px rgba(28, 37, 58, .25)); }
+.vivo__contadores { list-style: none; margin: 0; padding: 10px 2px 0; border-top: 1px solid var(--linea); display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: .875rem; }
+.vivo__contadores li { display: inline-flex; align-items: center; gap: 7px; }
+.vivo__contadores strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+.vivo__lado { display: grid; gap: 16px; }
+.vivo__actual, .vivo__acciones { padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.vivo__prov { font-weight: 520; }
+.vivo__monto { font-size: 1.375rem; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.vivo__expl { color: var(--tinta-2); font-size: .875rem; }
+.vivo__form { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--linea); }
+.vivo__form .boton { justify-self: start; margin-top: 4px; }
+.vivo__titulo-lista { margin-bottom: 10px; }
+.vivo__lista .mov__chip { width: 10px; height: 10px; border-radius: 50%; }
+.vivo__lista .mov { grid-template-columns: auto minmax(0, 1fr) auto; }
+@media (max-width: 860px) { .vivo { grid-template-columns: 1fr; } .nodo__texto { font-size: 15px; } }
