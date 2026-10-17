@@ -198,3 +198,21 @@ def test_j04_no_coincide_con_lo_acordado(m):
 def test_sin_jev_las_j_quedan_ok_con_marca(m):
     r = ev(m, jev_=None)
     assert all(r[k].veredicto == "OK" and r[k].evidencia == {"sin_jev": True} for k in ("J01", "J02", "J03", "J04"))
+
+
+def test_r05_reemision_con_sufijo_sin_ventana(m):
+    from datetime import date
+    from app.modelos import EntradaHistorial
+    previa = EntradaHistorial(id=1, ts="2026-10-02T00:00:00", proveedor_id="PRV-002", numero_factura="PF-1188",
+                              monto_total=Decimal("1850"), moneda="USD", fecha_emision=date(2026, 10, 2),
+                              decision="PAGAR", factura_hash="x", decidido_por="agente")
+    e = hacer_extraccion(proveedor_nombre="Pixel Forge LLC", proveedor_tax_id="87-1234567", numero_factura="PF-1188-B",
+                         monto_total=Decimal("1850"), fecha_emision=date(2026, 10, 16), cuenta_destino="202411778821",
+                         banco="Mercury", referencia_acuerdo=None)
+    r = {x.regla_id: x for x in reglas.evaluar(e, m, [previa], canal="pdf", remitente=None, consistente=True,
+                                                hoy=date(2026, 10, 17), jev=None, factura_hash="nuevo")}
+    assert r["R05"].veredicto == "ESCALAR" and "reemisión" in r["R05"].mensaje
+    otra = e.model_copy(update={"numero_factura": "PF-1290"})
+    r2 = {x.regla_id: x for x in reglas.evaluar(otra, m, [previa], canal="pdf", remitente=None, consistente=True,
+                                                 hoy=date(2026, 10, 17), jev=None, factura_hash="otro")}
+    assert r2["R05"].veredicto == "OK"  # número distinto de verdad, fuera de la ventana: no es reemisión

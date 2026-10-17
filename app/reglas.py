@@ -5,6 +5,8 @@ las 18 devuelven OK. La evidencia es JSON plano (floats, strings, fechas ISO) po
 """
 from __future__ import annotations
 
+import re
+
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -116,8 +118,26 @@ def _r04(e: Extraccion, prov: Proveedor | None, historial: list[EntradaHistorial
     return _r("R04")
 
 
+_SUFIJO = re.compile(r"(BIS|REV\d*|V\d+|COPIA|REEMITIDA|CORREGIDA|B|R)$")
+
+
+def _base(numero: str | None) -> str:
+    """Número sin sufijo de reemisión: 'PF-1188-B' y 'PF1188' comparten base 'PF1188'."""
+    n = alfanumerico(numero)
+    return _SUFIJO.sub("", n) if len(n) > 6 else n
+
+
 def _r05(e: Extraccion, prov: Proveedor, historial: list[EntradaHistorial], ventana: int) -> ResultadoRegla:
     num = alfanumerico(e.numero_factura)
+    base = _base(e.numero_factura)
+    for h in historial:
+        previo = alfanumerico(h.numero_factura)
+        if h.proveedor_id == prov.id and num and previo and previo != num and _base(h.numero_factura) == base:
+            # Reemisión con sufijo (-B, -R, REV…) de una factura ya registrada: sin ventana de días.
+            return _r("R05", "ESCALAR",
+                      f"La factura {e.numero_factura} parece una reemisión de {h.numero_factura} (decisión #{h.id}); "
+                      f"una persona debe confirmar que no es un cobro repetido",
+                      decision_previa=h.id, numero_previo=h.numero_factura)
     for h in historial:
         if not (h.proveedor_id == prov.id and h.monto_total == e.monto_total and h.moneda == e.moneda):
             continue

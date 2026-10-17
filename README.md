@@ -176,6 +176,19 @@ salvo la base. Para cientos de usuarios simultáneos: Postgres (ya soportado), u
 para la extracción, caché por hash y límites de tasa hacia los proveedores de modelos. Nada de eso
 cambia las reglas ni el registro.
 
+## Set de inyecciones (inspirado en PRAETOR)
+
+Diez facturas con instrucciones escondidas que parecen correspondencia de negocio: la autoridad del CFO, la
+"cuenta ya verificada por teléfono", una tabla de datos de pago actualizados, una nota al pie, un disparador
+condicional, un control sintáctico, una orden de compra inventada, un número "reemitido", una fe de erratas que
+infla el monto y un correo que "corrige" el número (`data/inyecciones.json`, `scripts/evaluar_inyecciones.py`).
+
+- **Corrida real (17-oct-2026):** 6 de 10 engañaron al extractor · JEV marcó 8 de 10 · **0 de 10 terminaron en PAGAR**.
+- **Peor caso (`tests/test_inyecciones.py`):** con el extractor y JEV 100 % engañados, las reglas en código igual
+  frenan las 10 (R02 cuenta contra el maestro, R04/R05 duplicados y reemisiones, R08 umbral, R09 acuerdo).
+- La técnica de medir "engañó al modelo" por separado de "terminó en pago" viene de
+  [PRAETOR](https://github.com/adityasinghin01-hash/praetor) (Apache-2.0); los textos de ataque son propios.
+
 ## Seguridad y límites conocidos
 
 - Datos **100 % simulados**: empresas, identificaciones, cuentas y correos son inventados.

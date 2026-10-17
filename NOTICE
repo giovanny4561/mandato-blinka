@@ -16,3 +16,5 @@ Este proyecto adapta ideas y patrones de:
   presupuesto por periodo).
 - TypeSafe AI — JEV / System One (docs.typesafe.ai): tipos de pregunta noul,
   choice y score, y la guía de umbrales de confianza.
+- adityasinghin01-hash/praetor (Apache-2.0): la métrica dual ("engañó al modelo" frente a "terminó en pago") para
+  evaluar inyecciones en facturas. Los textos de ataque de Mandato son propios y en español.
