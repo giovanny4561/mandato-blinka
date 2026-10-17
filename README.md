@@ -28,6 +28,7 @@ Labs con 12 proveedores, 68 legítimas y 30 trampas más. Las genera `scripts/ge
 | Autonomía (PAGAR + FRENAR) | 91 / 132 = **68,9 %** (57 pagadas, 34 frenadas, 41 escaladas) |
 | Costo total | **US$ 0,158**, unos US$ 0,0012 por factura |
 | Tiempo | menos de un minuto para las 132 (16 en paralelo); 3,1 s por factura |
+| Repetida en Railway (producción) | 132 / 132 · 0 de 54 trampas pagadas · US$ 0,154 · **22 s** para las 132, eventos en vivo segundo a segundo |
 
 Las 30 trampas nuevas: proveedor desconocido, aviso de cambio de cuenta, reenvío de una factura ya procesada,
 reemisión con sufijo en el número, cobro por encima de la orden de compra, sobre el tope, otra moneda, instrucciones

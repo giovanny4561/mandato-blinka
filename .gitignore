@@ -27,3 +27,4 @@ carga/salida/
 carga/facturas/
 data/sello.key
 *.key
+agentdb.rvf*
