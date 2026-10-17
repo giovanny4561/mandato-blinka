@@ -105,3 +105,13 @@ def test_firma_de_la_cabeza_verifica_y_no_sirve_para_otra():
     registro.insertar(hacer_decision(archivo="otra.pdf"))
     otra = firma.firmar_cabeza(registro.verificar()["cabeza"])
     assert not firma.verificar_firma(otra["mensaje"], f["firma"], f["llave_publica"])
+
+
+def test_fila_sin_sello_de_una_instancia_vieja_se_sella_antes_de_encadenar():
+    registro.insertar(hacer_decision(archivo="A.pdf"))
+    b = registro.insertar(hacer_decision(archivo="B.pdf"))
+    with registro.conectar() as con:  # la insertó la versión anterior durante el solape de un deploy
+        con.execute("UPDATE decisiones SET hash = NULL, hash_previo = NULL WHERE id = ?", (b,))
+    registro.insertar(hacer_decision(archivo="C.pdf"))
+    v = registro.verificar()
+    assert v["integro"] and v["filas"] == 3

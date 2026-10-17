@@ -116,6 +116,7 @@ def conectar(db: Destino = None) -> _Con:
         esquema = ESQUEMA_SQLITE
     clave = str(destino)
     if clave not in _inicializados:
+        _bloquear(con)  # dos procesos que abren a la vez una base vieja no la migran dos veces
         for sentencia in filter(str.strip, esquema.split(";")):
             con.execute(sentencia)
         _migrar(con)
@@ -178,6 +179,9 @@ def insertar(d: Decision, db: Destino = None) -> int:
     with conectar(db) as con:
         _bloquear(con)
         ultima = con.execute("SELECT hash FROM decisiones ORDER BY id DESC LIMIT 1").fetchone()
+        if ultima and ultima["hash"] is None:  # la insertó una instancia vieja durante un deploy: sellarla antes de colgar
+            _migrar(con)
+            ultima = con.execute("SELECT hash FROM decisiones ORDER BY id DESC LIMIT 1").fetchone()
         previo = ultima["hash"] if ultima else GENESIS
         valores += (previo, sello(previo, dict(zip(CAMPOS, valores))))
         if con.pg:

@@ -77,6 +77,7 @@ async def vida(_: FastAPI):
     anyio.to_thread.current_default_thread_limiter().total_tokens = 120  # 40 por defecto: cada subida espera ~3 s a los modelos
     registro.sembrar_si_vacia(config.data_dir() / "semilla.sqlite")
     registro.conectar().close()  # crea el esquema
+    firma.llave()  # crea sello.key una sola vez y falla al arrancar si SELLO_LLAVE está mal formada
     yield
 
 

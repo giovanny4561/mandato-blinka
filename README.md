@@ -52,7 +52,7 @@ desconocido, tope superado, presupuesto del mes agotado, vencida hace 90 días e
         ▼
  ┌────────────────────┐   texto o imagen dentro de <untrusted_document>
  │ Extractor en        │   dos pasadas independientes (modelo A y B) → JSON estricto validado
- │ cuarentena          │   si difieren en proveedor / monto / cuenta → ESCALAR
+ │ cuarentena          │   si difieren, o un valor de pago no está en el documento → ESCALAR (R12)
  └─────────┬──────────┘
            ▼
  ┌────────────────────┐   R00–R13 deterministas, configurables en data/mandato.json
@@ -65,11 +65,41 @@ desconocido, tope superado, presupuesto del mes agotado, vencida hace 90 días e
  │ JEV (TypeSafe)      │   preguntas tipadas con probabilidad calibrada; solo pueden endurecer
  └─────────┬──────────┘
            ▼
-   FRENAR > ESCALAR > PAGAR  →  explicación por plantilla  →  registro (Postgres / SQLite, solo inserción)
+   FRENAR > ESCALAR > PAGAR  →  explicación por plantilla  →  registro sellado (solo inserción, hash encadenado)
            │
            ├── /pendientes : una persona aprueba o rechaza con PIN
            └── /  panel    : autonomía · escaladas · frenadas · pagos fuera de reglas = 0 · ms · costo
 ```
+
+### Árbol de decisión
+
+```mermaid
+flowchart TD
+    F(["Factura: PDF, imagen, correo o chat"]) --> L["Dos modelos la leen en cuarentena<br/>JEV responde 5 preguntas tipadas"]
+    L --> C["18 controles en código<br/>cada uno responde OK, ESCALAR o FRENAR"]
+    C --> Q1{"¿Algún control frena?"}
+    Q1 -- "sí" --> FR["FRENAR<br/>no se paga y nadie lo reabre"]
+    Q1 -- "no" --> Q2{"¿Algún control escala?"}
+    Q2 -- "sí" --> ES["ESCALAR<br/>una persona aprueba o rechaza con PIN"]
+    Q2 -- "no" --> PA["PAGAR<br/>los 18 controles en OK"]
+    FR --> REG[("Registro sellado<br/>hash encadenado y cabeza firmada")]
+    ES --> REG
+    PA --> REG
+```
+
+El agente paga solo cuando ningún control objeta. Un FRENAR es definitivo; un ESCALAR espera a una persona en
+`/pendientes`, y su aprobación queda como una fila nueva que apunta a la escalada.
+
+- **Frenan:** R01 beneficiario fuera del mandato · R02 cuenta distinta a la del maestro · R04 duplicado exacto ·
+  R06 monto sobre el tope por pago · J01 instrucciones dirigidas a un sistema · J03 riesgo ≥ 2,5.
+- **Escalan:** R00 ilegible o incompleta · R03 moneda distinta · R05 casi duplicado o reemisión · R07 presupuesto del
+  mes · R08 sobre el umbral humano · R09 no concilia con el acuerdo · R10 fraccionamiento · R11 fechas · R12 lecturas
+  distintas o valor que no está en el documento · R13 remitente · J02 no parece factura · J03 riesgo ≥ 1,5 ·
+  J04 no coincide con lo acordado.
+
+El detalle de cada decisión (`/decisiones/{id}`) muestra este recorrido para esa factura: canal y hora, si las dos
+lecturas coinciden y cuánto tardaron, JEV, cuántos controles objetaron, el control decisivo y, si hubo, la persona
+que resolvió.
 
 **Principio de cuarentena** (adaptado del patrón KYC Screener de `anthropics/financial-services`):
 `extractor.py` y `decisor.py` son los dos módulos que ven el contenido de la factura. Ninguno tiene
@@ -131,7 +161,7 @@ uv run python scripts/evaluar.py              # corrida real sobre los 24 casos 
 ```
 
 Sin `DATABASE_URL` la app usa SQLite en `data/`; con una URL de Postgres (Railway la inyecta) usa Postgres.
-El `Dockerfile` arranca `uvicorn` con 2 workers; el procesamiento de la carpeta demo corre en segundo plano.
+El `Dockerfile` arranca `uvicorn` con 1 worker (el candado de decisión vive en el proceso); el procesamiento de la carpeta demo corre en segundo plano.
 
 ### Pantallas
 

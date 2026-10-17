@@ -145,6 +145,17 @@ p { margin: 0; }
 .veredicto__texto { font-size: 1.0625rem; line-height: 1.5; max-width: 72ch; }
 .veredicto__meta, .veredicto__accion { color: var(--tinta-2); font-size: .8125rem; }
 .veredicto__accion { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 8px; border-top: 1px solid var(--linea); width: 100%; }
+.flujo__cabeza { font-size: .8125rem; font-weight: 500; color: var(--tinta-2); letter-spacing: 0; margin-bottom: 8px; }
+.flujo { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); overflow: hidden; }
+.flujo__paso { position: relative; background: var(--superficie); display: grid; align-content: start; gap: 2px; padding: 14px 16px 14px 22px; min-width: 0; }
+.flujo__paso + .flujo__paso { box-shadow: inset 1px 0 0 var(--linea); }
+.flujo__paso + .flujo__paso::before { content: ""; position: absolute; left: -5px; top: 50%; width: 9px; height: 9px; background: inherit; border-top: 1px solid var(--linea-fuerte); border-right: 1px solid var(--linea-fuerte); transform: translateY(-50%) rotate(45deg); z-index: 1; }
+.flujo__titulo { font-size: .9375rem; font-weight: 500; }
+.flujo__dato { color: var(--tinta-2); font-size: .8125rem; overflow-wrap: anywhere; }
+.flujo__paso--pagar { background: var(--verde-suave); }
+.flujo__paso--escalar { background: var(--ambar-suave); }
+.flujo__paso--frenar { background: var(--rojo-suave); }
+.flujo__nota { margin-top: 8px; font-size: .8125rem; }
 .ficha { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); overflow: hidden; }
 .ficha > div { padding: 14px 18px; box-shadow: inset -1px -1px 0 var(--linea); min-width: 0; }
 .ficha dt { font-size: .8125rem; color: var(--tinta-2); }
@@ -229,6 +240,9 @@ tr:last-child td { border-bottom: 0; }
 .vacio-estado .boton { margin-top: 8px; }
 
 @media (max-width: 860px) {
+  .flujo { grid-auto-flow: row; }
+  .flujo__paso + .flujo__paso { box-shadow: inset 0 1px 0 var(--linea); }
+  .flujo__paso + .flujo__paso::before { left: 22px; top: -5px; transform: rotate(135deg); }
   .barra__dentro { flex-wrap: wrap; gap: 10px 16px; padding: 10px 16px; }
   .nav { order: 3; flex-basis: 100%; justify-content: flex-start; overflow-x: auto; margin: 0 -4px; scrollbar-width: none; }
   .barra .boton--chico { margin-left: auto; }
