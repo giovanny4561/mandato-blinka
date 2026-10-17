@@ -9,7 +9,7 @@
     "tope_por_pago": 10000,
     "umbral_aprobacion_humana": 5000,
     "presupuesto_periodo": {
-      "monto": 56000,
+      "monto": 79000,
       "recurrencia": "mensual"
     },
     "ventana_fraccionamiento_dias": 7,

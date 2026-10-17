@@ -210,3 +210,22 @@ def test_legible_para_agentes():
         rutas = c.get("/openapi.json").json()["paths"]
         assert "/api/metricas" in rutas and "/" not in rutas and "/pendientes" not in rutas
         assert rutas["/api/procesar"]["post"]["operationId"] == "procesar_factura"
+
+
+def test_exportar_registro_csv_sin_cuentas():
+    registro.insertar(hacer_decision())
+    with TestClient(app) as c:
+        r = c.get("/api/decisiones.csv")
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+        lineas = r.text.lstrip("﻿").splitlines()
+        assert lineas[0].startswith("id,ts,archivo") and len(lineas) == 2 and "PAGAR" in lineas[1]
+        assert "03100190193" not in r.text  # la cuenta no sale del sistema
+
+
+def test_muestras_solo_de_la_lista(entorno):
+    (entorno / "facturas").mkdir()
+    shutil.copy(RAIZ / "data" / "facturas" / "F08_cambio_cuenta.pdf", entorno / "facturas")
+    with TestClient(app) as c:
+        assert c.get("/muestras/F08_cambio_cuenta.pdf").status_code == 200
+        assert c.get("/muestras/mandato.json").status_code == 404
+        assert c.get("/muestras/..%2Fmandato.json").status_code == 404

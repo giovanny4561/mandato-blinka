@@ -4,7 +4,7 @@
 {% block contenido %}
 <div class="encabezado">
   <h1>Decisiones</h1>
-  <p class="bajada">{{ decisiones|length }} registros. Nadie edita ni borra filas: una aprobación humana agrega otra que apunta a la escalada.</p>
+  <p class="bajada">{{ decisiones|length }} registros. Nadie edita ni borra filas: una aprobación humana agrega otra que apunta a la escalada. <a class="enlace" href="/api/decisiones.csv">Descargar en CSV</a></p>
 </div>
 {% if decisiones %}
 <ul class="movimientos">

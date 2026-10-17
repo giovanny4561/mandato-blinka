@@ -63,25 +63,27 @@ def texto_xml(contenido: bytes) -> str:
         return contenido.decode("utf-8", errors="replace")
     lineas: list[str] = []
 
-    def recorrer(raiz: ET.Element, incrustada: bool) -> None:
-        for n in raiz.iter():
-            if "xmldsig" in str(n.tag):
-                continue
-            texto = (n.text or "").strip()
-            if texto.startswith("<") and not incrustada:
-                try:
-                    recorrer(ET.fromstring(texto.encode()), True)
-                    continue
-                except ET.ParseError:
-                    pass
-            if len(texto) > 300 and " " not in texto:  # binarios en base64 (certificados, PDF adjunto)
-                continue
-            attrs = " ".join(f"{k.rsplit('}', 1)[-1]}={v}" for k, v in n.attrib.items())
-            if texto or attrs:
-                lineas.append(f"{str(n.tag).rsplit('}', 1)[-1]} {attrs}".strip() + (f": {texto}" if texto else ""))
+    def recorrer(n: ET.Element, ruta: tuple[str, ...], incrustada: bool) -> None:
+        nombre = str(n.tag).rsplit("}", 1)[-1]
+        if "xmldsig" in str(n.tag):
+            return
+        texto = (n.text or "").strip()
+        if texto.startswith("<") and not incrustada:
+            try:
+                recorrer(ET.fromstring(texto.encode()), (), True)
+                texto = ""
+            except ET.ParseError:
+                pass
+        if len(texto) > 300 and " " not in texto:  # binarios en base64 (certificados, PDF adjunto)
+            texto = ""
+        attrs = " ".join(f"{k.rsplit('}', 1)[-1]}={v}" for k, v in n.attrib.items())
+        if texto or attrs:  # con la ruta: el ID de la cuenta no se confunde con el de la factura, ni el proveedor con el cliente
+            lineas.append(f"{'/'.join(ruta[-3:] + (nombre,))} {attrs}".strip() + (f": {texto}" if texto else ""))
+        for hijo in n:
+            recorrer(hijo, ruta + (nombre,), incrustada)
 
     try:
-        recorrer(ET.fromstring(contenido), False)
+        recorrer(ET.fromstring(contenido), (), False)
     except ET.ParseError:
         return contenido.decode("utf-8", errors="replace")
     return "\n".join(lineas)

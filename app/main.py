@@ -1,5 +1,7 @@
 """Mandato — FastAPI: panel, mandato, bandeja, decisiones, pendientes y /api."""
 import asyncio
+import csv
+import io
 import base64
 import hashlib
 
@@ -257,6 +259,46 @@ def api_orden_x402(id_: int):
     return orden
 
 
+COLUMNAS_CSV = ("id", "ts", "archivo", "canal", "proveedor_id", "proveedor_nombre", "numero_factura", "monto_total", "moneda",
+                "decision", "regla_decisiva", "decidido_por", "referencia_a", "riel_sugerido", "explicacion", "mandato_hash",
+                "sello", "costo_usd", "latencia_ms")
+
+
+@app.get("/api/decisiones.csv", operation_id="exportar_registro",
+         summary="Registro completo en CSV (sin cuentas ni identificaciones), para auditoría o una hoja de cálculo")
+def api_decisiones_csv():
+    salida = io.StringIO()
+    w = csv.writer(salida)
+    w.writerow(COLUMNAS_CSV)
+    for d in reversed(registro.listar(100000)):
+        e = d.extraccion
+        fila = d.model_dump(mode="json") | {"proveedor_nombre": e.proveedor_nombre, "numero_factura": e.numero_factura,
+                                            "monto_total": e.monto_total, "moneda": e.moneda}
+        w.writerow([fila[c] for c in COLUMNAS_CSV])
+    return Response("\ufeff" + salida.getvalue(), media_type="text/csv; charset=utf-8",  # BOM: Excel lee bien las tildes
+                    headers={"Content-Disposition": 'attachment; filename="mandato-registro.csv"'})
+
+
+MUESTRAS = {  # archivo → qué debería pasar al subirlo
+    "NA-2026-0975_dian.xml": "Factura electrónica de la DIAN (XML) de Nube Andina: dentro del mandato",
+    "CR-014_cfdi.xml": "CFDI 4.0 (XML) de Carla Ríos: dentro del mandato",
+    "F08_cambio_cuenta.pdf": "La cuenta no es la del maestro: se frena",
+    "F16_inyeccion.pdf": "Trae instrucciones para el sistema: se frena",
+    "F01_nube_andina_oct.pdf": "Ya está en el registro: el agente la reconoce como duplicada",
+}
+
+
+@app.get("/muestras/{nombre}", include_in_schema=False)
+def muestra(nombre: str):
+    if nombre not in MUESTRAS:  # solo la lista fija: sin rutas arbitrarias
+        raise HTTPException(404, "muestra no encontrada")
+    ruta = next((r for r in (config.data_dir() / "muestras" / nombre, config.facturas_dir() / nombre) if r.exists()), None)
+    if ruta is None:
+        raise HTTPException(404, "muestra no encontrada")
+    return Response(ruta.read_bytes(), media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{nombre}"'})
+
+
 @app.get("/api/decisiones", operation_id="decisiones", summary="Registro de decisiones con controles, JEV y explicación (cuentas enmascaradas)")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
@@ -403,6 +445,7 @@ def guardar_limites(request: Request, pin: str = Form(...), tope_por_pago: Decim
 @app.get("/bandeja", response_class=HTMLResponse, include_in_schema=False)
 def bandeja(request: Request):
     return render(request, "bandeja.html", decisiones=registro.listar(100), n_demo=len(archivos_demo()), n_trampas=trampas_demo(),
+                  muestras=MUESTRAS,
                   demo_en_curso=_demo.locked())
 
 

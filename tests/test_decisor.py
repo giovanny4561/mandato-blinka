@@ -219,3 +219,15 @@ def test_shim_tolera_texto_sobrante_tras_el_json(monkeypatch):
     monkeypatch.setattr(d, "_post", lambda url, headers, body: R())
     r = d._llm({"document_text": "x"}, d.PREGUNTAS)
     assert r.respuestas["is_invoice"].probabilidad == 0.9
+
+
+def test_jev_por_vercel_ai_gateway(monkeypatch):
+    from app import config
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    for v in ("TYPESAFE_BASE_URL", "TYPESAFE_MODEL", "JEV_BACKEND"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("AI_GATEWAY_API_KEY", "llave-de-prueba")
+    assert config.jev_backend() == "typesafe" and config.typesafe_key() == "llave-de-prueba"
+    assert config.typesafe_base_url() == "https://ai-gateway.vercel.sh/typesafe" and config.typesafe_model() == "typesafe-ai/jev"
+    monkeypatch.setenv("TYPESAFE_API_KEY", "directa")
+    assert config.typesafe_base_url() == "https://api.typesafe.ai" and config.typesafe_model() == "jev-latest"

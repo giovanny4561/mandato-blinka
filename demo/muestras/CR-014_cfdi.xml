@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" Version="4.0" Serie="CR" Folio="CR-014"
+ Fecha="2026-10-16T10:12:00" Moneda="USD" SubTotal="850.00" Total="850.00" TipoDeComprobante="I"
+ MetodoPago="PUE" FormaPago="03" LugarExpedicion="06600">
+ <cfdi:Emisor Rfc="RIOC850101XY1" Nombre="Carla Ríos" RegimenFiscal="626"/>
+ <cfdi:Receptor Rfc="XEXX010101000" Nombre="Andina Labs Inc." UsoCFDI="S01"/>
+ <cfdi:Conceptos>
+  <cfdi:Concepto ClaveProdServ="81141601" Cantidad="1" Descripcion="Diseño UX, sprint 21" ValorUnitario="850.00" Importe="850.00"/>
+ </cfdi:Conceptos>
+</cfdi:Comprobante>

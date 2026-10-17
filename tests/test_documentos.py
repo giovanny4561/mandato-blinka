@@ -122,13 +122,13 @@ UBL = """<?xml version="1.0" encoding="UTF-8"?>
 
 def test_xml_dian_lee_la_factura_incrustada_y_omite_la_firma():
     doc = documentos.desde_bytes("NA-2026-0917.xml", UBL)
-    assert doc.canal == "xml" and "ID: NA-2026-0917" in doc.texto
-    assert "PayableAmount currencyID=USD: 3200.00" in doc.texto and "QUJD" not in doc.texto
+    assert doc.canal == "xml" and "Invoice/ID: NA-2026-0917" in doc.texto
+    assert "Invoice/PayableAmount currencyID=USD: 3200.00" in doc.texto and "QUJD" not in doc.texto
 
 
 def test_xml_cfdi_toma_los_atributos_y_no_resuelve_entidades():
     cfdi = b'<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" Folio="CR-010" Total="2900.00" Moneda="USD"/>'
-    assert "Folio=CR-010 Total=2900.00 Moneda=USD" in documentos.desde_bytes("cr.xml", cfdi).texto
+    assert "Comprobante Folio=CR-010 Total=2900.00 Moneda=USD" in documentos.desde_bytes("cr.xml", cfdi).texto
     bomba = b'<!DOCTYPE x [<!ENTITY a "aaaa">]><x>&a;</x>'
     assert documentos.desde_bytes("b.xml", bomba).texto.startswith("<!DOCTYPE")  # se lee como texto, sin expandir
     assert documentos.desde_bytes("roto.xml", b"<x><y></x>").texto == "<x><y></x>"

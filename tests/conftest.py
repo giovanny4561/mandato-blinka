@@ -21,6 +21,7 @@ def entorno(tmp_path, monkeypatch):
     monkeypatch.setenv("ANCLA_MINUTOS", "0")  # sin red: el anclaje se prueba con calendarios simulados
     monkeypatch.setenv("JEV_BACKEND", "llm")
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.delenv("AI_GATEWAY_API_KEY", raising=False)
     shutil.copy(RAIZ / "data" / "mandato.json", tmp_path / "mandato.json")
     if os.getenv("DATABASE_URL"):  # pruebas contra Postgres real: cada test parte de tabla vacía
         registro.reiniciar()

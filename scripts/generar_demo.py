@@ -1,7 +1,7 @@
 """Arma la demo de 132 facturas en demo/: las 24 del set principal, las 10 inyecciones y 98 de un mes de operación.
 
 - demo/mandato.json: el de data/ con 8 proveedores más (los de la prueba de carga), sus órdenes de compra, billetera
-  USDC para los que aceptan USDC y un presupuesto mensual que se agota cerca del final del set.
+  USDC para los que aceptan USDC y un presupuesto mensual con margen después del set para las pruebas del jurado.
 - demo/casos.json: en orden de proceso. `esperado` es PAGAR, NO_PAGAR (trampa) o CUALQUIERA (legítima: puede pagarse
   o escalar, nunca frenarse); trae la extracción y las respuestas de JEV esperadas para la repetición offline.
 - demo/facturas/: los 132 archivos. Las inyecciones van con la extracción y JEV ENGAÑADOS (peor caso).
@@ -148,9 +148,10 @@ def entrada_extra(k: dict) -> dict:
                 extraccion_esperada=gf.extraccion(c), jev_esperado=gf.jev(c))
 
 
-def simular(casos: list[dict], m: Mandato) -> list[tuple[str, str | None]]:
-    """Repite el set en orden sin modelos: extracción y JEV esperados, reglas reales. Devuelve (decisión, regla)."""
-    historial: list[EntradaHistorial] = []
+def simular(casos: list[dict], m: Mandato, historial: list[EntradaHistorial] | None = None) -> list[tuple[str, str | None]]:
+    """Repite el set en orden sin modelos: extracción y JEV esperados, reglas reales. Devuelve (decisión, regla) y, si
+    recibe una lista `historial`, la deja con el registro resultante."""
+    historial = [] if historial is None else historial
     salida = []
     for i, caso in enumerate(casos):
         e = Extraccion(**caso["extraccion_esperada"])
@@ -165,6 +166,48 @@ def simular(casos: list[dict], m: Mandato) -> list[tuple[str, str | None]]:
             decision=decision, factura_hash=caso["archivo"], decidido_por="agente", referencia_acuerdo=e.referencia_acuerdo))
         salida.append((decision, regla))
     return salida
+
+
+UBL_NUBE = """<?xml version="1.0" encoding="UTF-8"?>
+<AttachedDocument xmlns="urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2"
+ xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+ xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+ <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+ <cbc:ProfileID>Factura Electrónica de Venta (simulada)</cbc:ProfileID>
+ <cac:Attachment><cac:ExternalReference><cbc:MimeCode>text/xml</cbc:MimeCode><cbc:Description><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+ xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+ xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+ <cbc:ID>NA-2026-0975</cbc:ID>
+ <cbc:IssueDate>2026-10-16</cbc:IssueDate>
+ <cbc:DueDate>2026-10-31</cbc:DueDate>
+ <cbc:DocumentCurrencyCode>USD</cbc:DocumentCurrencyCode>
+ <cac:AccountingSupplierParty><cac:Party><cac:PartyTaxScheme>
+  <cbc:RegistrationName>Nube Andina SAS</cbc:RegistrationName><cbc:CompanyID schemeName="31">901234567-8</cbc:CompanyID>
+ </cac:PartyTaxScheme></cac:Party></cac:AccountingSupplierParty>
+ <cac:AccountingCustomerParty><cac:Party><cac:PartyTaxScheme>
+  <cbc:RegistrationName>Andina Labs Inc.</cbc:RegistrationName>
+ </cac:PartyTaxScheme></cac:Party></cac:AccountingCustomerParty>
+ <cac:PaymentMeans><cbc:PaymentDueDate>2026-10-31</cbc:PaymentDueDate>
+  <cac:PayeeFinancialAccount><cbc:ID>03100190193</cbc:ID><cbc:Name>Bancolombia</cbc:Name></cac:PayeeFinancialAccount>
+ </cac:PaymentMeans>
+ <cac:LegalMonetaryTotal><cbc:PayableAmount currencyID="USD">380.00</cbc:PayableAmount></cac:LegalMonetaryTotal>
+ <cac:InvoiceLine><cbc:ID>1</cbc:ID><cbc:LineExtensionAmount currencyID="USD">380.00</cbc:LineExtensionAmount>
+  <cac:Item><cbc:Description>Monitoreo de infraestructura, octubre</cbc:Description></cac:Item></cac:InvoiceLine>
+</Invoice>]]></cbc:Description></cac:ExternalReference></cac:Attachment>
+</AttachedDocument>
+"""
+CFDI_CARLA = """<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" Version="4.0" Serie="CR" Folio="CR-014"
+ Fecha="2026-10-16T10:12:00" Moneda="USD" SubTotal="850.00" Total="850.00" TipoDeComprobante="I"
+ MetodoPago="PUE" FormaPago="03" LugarExpedicion="06600">
+ <cfdi:Emisor Rfc="RIOC850101XY1" Nombre="Carla Ríos" RegimenFiscal="626"/>
+ <cfdi:Receptor Rfc="XEXX010101000" Nombre="Andina Labs Inc." UsoCFDI="S01"/>
+ <cfdi:Conceptos>
+  <cfdi:Concepto ClaveProdServ="81141601" Cantidad="1" Descripcion="Diseño UX, sprint 21" ValorUnitario="850.00" Importe="850.00"/>
+ </cfdi:Conceptos>
+</cfdi:Comprobante>
+"""
 
 
 def main():
@@ -183,10 +226,11 @@ def main():
     casos = principales + inyecciones + [entrada_extra(k) for k in gen]
     assert len(casos) == 132
 
-    # presupuesto: lo que se pagaría sin tope de presupuesto, menos un margen, para que se agote al final del set
+    # presupuesto: lo que paga el set más USD 20.000 de margen, para que el jurado pueda probar con sus facturas
+    # (el control de presupuesto se ve en el set exacto de 24, F13, y en las pruebas)
     sin_tope = simular(casos, Mandato.model_validate(mandato_demo(10**9)))
     pagado = sum(float(c["extraccion_esperada"]["monto_total"]) for c, (d, _) in zip(casos, sin_tope) if d == "PAGAR")
-    presupuesto = math.floor(pagado * 0.97 / 1000) * 1000
+    presupuesto = math.ceil((pagado + 20000) / 1000) * 1000
     m = mandato_demo(presupuesto)
     resultado = simular(casos, Mandato.model_validate(m))
     for c, (d, r) in zip(casos, resultado):
@@ -204,6 +248,10 @@ def main():
         carga.escribir(k["c"])
     (DEMO / "mandato.json").write_text(json.dumps(m, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (DEMO / "casos.json").write_text(json.dumps(casos, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    muestras = DEMO / "muestras"  # para que el jurado pruebe la subida: no están en el set de 132
+    muestras.mkdir(exist_ok=True)
+    (muestras / "NA-2026-0975_dian.xml").write_text(UBL_NUBE, encoding="utf-8")
+    (muestras / "CR-014_cfdi.xml").write_text(CFDI_CARLA, encoding="utf-8")
 
     n = {v: sum(d == v for d, _ in resultado) for v in ("PAGAR", "ESCALAR", "FRENAR")}
     print(f"{len(casos)} facturas en {SALIDA} ({sum(c['trampa'] for c in casos)} trampas) · presupuesto USD {presupuesto:,}")

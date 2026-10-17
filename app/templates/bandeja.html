@@ -32,6 +32,15 @@
     <button class="boton boton--secundario" {% if demo_en_curso %}disabled{% endif %}>{{ 'Procesando…' if demo_en_curso else 'Procesar el set' }}</button>
   </form>
 </div>
+<section aria-labelledby="t-muestras">
+  <div class="seccion-cabeza"><h2 id="t-muestras">Facturas de muestra para probar</h2></div>
+  <ul class="muestras">
+    {% for archivo, que in muestras.items() %}
+    <li><a class="enlace" href="/muestras/{{ archivo }}" download>{{ archivo }}</a> <span class="tenue">{{ que }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+
 {% if decisiones %}
 <section aria-labelledby="t-proc">
   <div class="seccion-cabeza"><h2 id="t-proc">Procesadas</h2></div>

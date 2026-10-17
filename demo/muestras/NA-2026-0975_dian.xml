@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AttachedDocument xmlns="urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2"
+ xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+ xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+ <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+ <cbc:ProfileID>Factura Electrónica de Venta (simulada)</cbc:ProfileID>
+ <cac:Attachment><cac:ExternalReference><cbc:MimeCode>text/xml</cbc:MimeCode><cbc:Description><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+ xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+ xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+ <cbc:ID>NA-2026-0975</cbc:ID>
+ <cbc:IssueDate>2026-10-16</cbc:IssueDate>
+ <cbc:DueDate>2026-10-31</cbc:DueDate>
+ <cbc:DocumentCurrencyCode>USD</cbc:DocumentCurrencyCode>
+ <cac:AccountingSupplierParty><cac:Party><cac:PartyTaxScheme>
+  <cbc:RegistrationName>Nube Andina SAS</cbc:RegistrationName><cbc:CompanyID schemeName="31">901234567-8</cbc:CompanyID>
+ </cac:PartyTaxScheme></cac:Party></cac:AccountingSupplierParty>
+ <cac:AccountingCustomerParty><cac:Party><cac:PartyTaxScheme>
+  <cbc:RegistrationName>Andina Labs Inc.</cbc:RegistrationName>
+ </cac:PartyTaxScheme></cac:Party></cac:AccountingCustomerParty>
+ <cac:PaymentMeans><cbc:PaymentDueDate>2026-10-31</cbc:PaymentDueDate>
+  <cac:PayeeFinancialAccount><cbc:ID>03100190193</cbc:ID><cbc:Name>Bancolombia</cbc:Name></cac:PayeeFinancialAccount>
+ </cac:PaymentMeans>
+ <cac:LegalMonetaryTotal><cbc:PayableAmount currencyID="USD">380.00</cbc:PayableAmount></cac:LegalMonetaryTotal>
+ <cac:InvoiceLine><cbc:ID>1</cbc:ID><cbc:LineExtensionAmount currencyID="USD">380.00</cbc:LineExtensionAmount>
+  <cac:Item><cbc:Description>Monitoreo de infraestructura, octubre</cbc:Description></cac:Item></cac:InvoiceLine>
+</Invoice>]]></cbc:Description></cac:ExternalReference></cac:Attachment>
+</AttachedDocument>

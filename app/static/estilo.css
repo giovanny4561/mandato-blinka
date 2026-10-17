@@ -223,6 +223,8 @@ textarea.codigo { height: 380px; padding: 12px 14px; font: .8125rem/1.5 var(--mo
 .reglas__campos label { color: var(--tinta-2); font-size: .8125rem; }
 .reglas__campos input { font-size: 1.0625rem; font-weight: 500; font-variant-numeric: tabular-nums; }
 .reglas__pie { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--linea); }
+.muestras { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.muestras li { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .editor { padding: 18px 22px; }
 .editor summary { font-size: .9375rem; font-weight: 500; color: var(--tinta); }
 .editor form { display: grid; gap: 12px; margin-top: 14px; }

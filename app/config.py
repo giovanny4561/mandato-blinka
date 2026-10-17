@@ -91,15 +91,21 @@ def jev_backend() -> str:
 
 
 def typesafe_key() -> str:
-    return os.getenv("TYPESAFE_API_KEY", "")
+    """Llave de TypeSafe o, si no hay, de Vercel AI Gateway (que sirve JEV con el mismo cliente y las mismas respuestas)."""
+    return os.getenv("TYPESAFE_API_KEY") or os.getenv("AI_GATEWAY_API_KEY", "")
+
+
+def _jev_por_gateway() -> bool:
+    return not os.getenv("TYPESAFE_API_KEY") and bool(os.getenv("AI_GATEWAY_API_KEY"))
 
 
 def typesafe_base_url() -> str:
-    return os.getenv("TYPESAFE_BASE_URL", "https://api.typesafe.ai").rstrip("/")
+    defecto = "https://ai-gateway.vercel.sh/typesafe" if _jev_por_gateway() else "https://api.typesafe.ai"
+    return (os.getenv("TYPESAFE_BASE_URL") or defecto).rstrip("/")
 
 
 def typesafe_model() -> str:
-    return os.getenv("TYPESAFE_MODEL", "jev-latest")
+    return os.getenv("TYPESAFE_MODEL") or ("typesafe-ai/jev" if _jev_por_gateway() else "jev-latest")
 
 
 def jev_llm_modelo() -> str:
