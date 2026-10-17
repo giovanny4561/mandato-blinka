@@ -1,0 +1,45 @@
+{
+  "version": "2026-10-17",
+  "empresa": {"nombre": "Andina Labs Inc.", "pais": "US", "moneda_base": "USD"},
+  "limites": {
+    "tope_por_pago": 10000,
+    "umbral_aprobacion_humana": 5000,
+    "presupuesto_periodo": {"monto": 18000, "recurrencia": "mensual"},
+    "ventana_fraccionamiento_dias": 7,
+    "ventana_casi_duplicado_dias": 10
+  },
+  "conciliacion": {"tolerancia_pct": 5, "tolerancia_abs": 50, "exigir_acuerdo_desde": 3000},
+  "umbrales_jev": {
+    "instrucciones_ocultas_frenar": 0.35,
+    "no_es_factura_escalar": 0.5,
+    "riesgo_escalar": 1.5,
+    "riesgo_frenar": 2.5,
+    "coincide_confianza_min": 0.6
+  },
+  "proveedores_permitidos": [
+    {"id": "PRV-001", "nombre": "Nube Andina SAS", "tax_id": "901234567-8", "pais": "CO",
+     "moneda": "USD", "banco": "Bancolombia", "cuenta": "03100190193", "acepta_usdc": false,
+     "dominio_correo": "nubeandina.co"},
+    {"id": "PRV-002", "nombre": "Pixel Forge LLC", "tax_id": "87-1234567", "pais": "US",
+     "moneda": "USD", "banco": "Mercury", "cuenta": "202411778821", "acepta_usdc": true,
+     "dominio_correo": "pixelforge.io"},
+    {"id": "PRV-003", "nombre": "Logística Sur SpA", "tax_id": "76543210-9", "pais": "CL",
+     "moneda": "USD", "banco": "Banco de Chile", "cuenta": "00123456789", "acepta_usdc": false,
+     "dominio_correo": "logisticasur.cl"},
+    {"id": "PRV-004", "nombre": "Carla Ríos", "tax_id": "RIOC850101XY1", "pais": "MX",
+     "moneda": "USD", "banco": "BBVA México", "cuenta": "012180001234567890", "acepta_usdc": true,
+     "dominio_correo": null}
+  ],
+  "acuerdos": [
+    {"id": "OC-2026-014", "proveedor_id": "PRV-001", "concepto": "Hosting y soporte cloud octubre",
+     "monto": 3200, "moneda": "USD", "vigente_hasta": "2026-12-31"},
+    {"id": "OC-2026-019", "proveedor_id": "PRV-001", "concepto": "Implementación plataforma de datos",
+     "monto": 7500, "moneda": "USD", "vigente_hasta": "2026-12-31"},
+    {"id": "OC-2026-021", "proveedor_id": "PRV-003", "concepto": "Transporte y bodegaje octubre",
+     "monto": 2400, "moneda": "USD", "vigente_hasta": "2026-12-31"},
+    {"id": "OC-2026-027", "proveedor_id": "PRV-003", "concepto": "Bodegaje adicional octubre",
+     "monto": 4900, "moneda": "USD", "vigente_hasta": "2026-12-31"},
+    {"id": "OC-2026-031", "proveedor_id": "PRV-001", "concepto": "Soporte cloud noviembre (anticipo)",
+     "monto": 3150, "moneda": "USD", "vigente_hasta": "2026-12-31"}
+  ]
+}
