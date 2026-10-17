@@ -12,7 +12,7 @@
 
   const el = (tag, attrs, padre) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); padre && padre.appendChild(n); return n; };
   const nodo = (id, x, y, r, etiqueta, lado) => {
-    const g = el("g", { class: "nodo", "data-id": id }, capas.nodos);
+    const g = el("g", { class: "nodo", "data-id": id, id }, capas.nodos);
     const c = el("circle", { cx: x, cy: y, r, class: "nodo__circulo" }, g);
     const t = el("text", { x: lado === "dentro" ? x : lado === "izq" ? x - r - 10 : x + r + 10, y: y + 4, class: "nodo__texto nodo__texto--" + lado,
       "text-anchor": lado === "dentro" ? "middle" : lado === "izq" ? "end" : "start" }, g);

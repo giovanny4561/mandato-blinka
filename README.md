@@ -9,7 +9,7 @@ para los juicios rápidos. Cada decisión cita la regla que la causó. Un pago f
 necesita a una persona.
 
 > Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
-> Demo en vivo: *(enlace en la entrega)* · Video: *(enlace en la entrega)* · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
+> Demo en vivo: https://mandato-production.up.railway.app · Video (97 s): https://mandato-production.up.railway.app/static/mandato-demo.mp4 · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
 ---
 
@@ -22,7 +22,7 @@ necesita a una persona.
 | Facturas trampa que terminaron en PAGAR | **0** de 15 |
 | Autonomía (decidido sin persona: PAGAR + FRENAR) | 15 / 24 = **62,5 %** |
 | Escaladas a una persona (por diseño: monto, presupuesto, discrepancias) | 9 / 24 |
-| Costo total (dos extracciones + JEV) | **US$ 0,0301** → US$ 0,00125 por factura |
+| Costo total (dos extracciones + JEV) | **US$ 0,0299** → US$ 0,00125 por factura |
 | Tiempo medio por factura | 3,5 s (imágenes ≈ 5–6 s) |
 | Pruebas automáticas | 152, cobertura 96 % en `app/` |
 

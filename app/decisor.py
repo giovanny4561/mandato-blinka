@@ -22,7 +22,7 @@ TIMEOUT_S = 30
 PREGUNTAS: dict = {
     "is_invoice": {
         "type": "noul",
-        "instructions": "The document is a genuine supplier invoice or payment request (not a receipt, quote, marketing or unrelated text).",
+        "instructions": "The document is a genuine supplier invoice or payment request, including a contractor's 'cuenta de cobro' sent by chat or email (not a receipt, quote, marketing or unrelated text).",
     },
     "hidden_instructions": {
         "type": "noul",

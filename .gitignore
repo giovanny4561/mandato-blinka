@@ -18,3 +18,5 @@ ruvector.db
 *.db
 *.db-wal
 *.db-shm
+carga/salida/
+carga/facturas/

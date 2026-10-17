@@ -16,7 +16,7 @@ from app import config, decisor, extractor, motor, registro
 from app import mandato as mod_mandato
 from app.modelos import Decision, Documento
 
-PARALELO = 6
+PARALELO = 16
 _trabajos: dict[str, "Trabajo"] = {}
 
 
@@ -68,32 +68,43 @@ def resumen(d: Decision, id_: int) -> dict:
                 explicacion=d.explicacion, ms=d.latencia_ms, decidido_por=d.decidido_por)
 
 
+def preparar(doc: Documento, m, hoy):
+    """Lo lento y paralelizable: dos lecturas + JEV. No toca el historial ni el candado."""
+    t0 = time.perf_counter()
+    extraccion, consistente, costo = extractor.extraer(doc, hoy)
+    prov = mod_mandato.proveedor_por(extraccion, m)
+    acuerdo = mod_mandato.acuerdo_por(extraccion.referencia_acuerdo, prov.id, m, hoy) if prov else None
+    jev = decisor.preguntar_factura(motor.estado_para_jev(doc, extraccion, acuerdo, prov, hoy))
+    return extraccion, consistente, costo, jev, time.perf_counter() - t0
+
+
+def decidir_y_registrar(doc: Documento, m, hoy, preparado, candado: threading.Lock) -> tuple[Decision, int]:
+    """Lo rápido y ordenado: reglas contra el historial + registro, bajo el candado (milisegundos)."""
+    extraccion, consistente, costo, jev, segundos = preparado
+    with candado:
+        d = motor.decidir(doc, m, extraer=lambda _d: (extraccion, consistente, costo),
+                          preguntar=lambda _s: jev, historial=registro.historial(), hoy=hoy)
+        d.latencia_ms += int(segundos * 1000)
+        return d, registro.insertar(d)
+
+
 def procesar_lote(trabajo: Trabajo, docs: list[Documento], candado: threading.Lock) -> None:
     m = mod_mandato.cargar()
     hoy = config.hoy()
 
     def leer(i: int, doc: Documento):
         trabajo.emitir(tipo="recibida", i=i, archivo=doc.nombre, canal=doc.canal)
-        t0 = time.perf_counter()
-        extraccion, consistente, costo = extractor.extraer(doc, hoy)
-        prov = mod_mandato.proveedor_por(extraccion, m)
-        acuerdo = mod_mandato.acuerdo_por(extraccion.referencia_acuerdo, prov.id, m, hoy) if prov else None
-        jev = decisor.preguntar_factura(motor.estado_para_jev(doc, extraccion, acuerdo, prov, hoy))
-        trabajo.emitir(tipo="leida", i=i, consistente=consistente, proveedor=extraccion.proveedor_nombre,
-                       numero=extraccion.numero_factura, jev_ms=jev.latencia_ms)
-        return extraccion, consistente, costo, jev, time.perf_counter() - t0
+        prep = preparar(doc, m, hoy)
+        trabajo.emitir(tipo="leida", i=i, consistente=prep[1], proveedor=prep[0].proveedor_nombre,
+                       numero=prep[0].numero_factura, jev_ms=prep[3].latencia_ms)
+        return prep
 
     try:
         with ThreadPoolExecutor(PARALELO) as pool:
             futuros = [pool.submit(leer, i, doc) for i, doc in enumerate(docs)]
             for i, (doc, futuro) in enumerate(zip(docs, futuros)):
                 try:
-                    extraccion, consistente, costo, jev, segundos = futuro.result()
-                    with candado:
-                        d = motor.decidir(doc, m, extraer=lambda _d: (extraccion, consistente, costo),
-                                          preguntar=lambda _s: jev, historial=registro.historial(), hoy=hoy)
-                        d.latencia_ms += int(segundos * 1000)
-                        id_ = registro.insertar(d)
+                    d, id_ = decidir_y_registrar(doc, m, hoy, futuro.result(), candado)
                     trabajo.emitir(tipo="decidida", i=i, **resumen(d, id_))
                 except Exception:
                     logging.exception("flujo: falló %s", doc.nombre)

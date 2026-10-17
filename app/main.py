@@ -1,5 +1,7 @@
 """Mandato — FastAPI: panel, mandato, bandeja, decisiones, pendientes y /api."""
 import asyncio
+
+import anyio
 import hmac
 import json
 import logging
@@ -71,6 +73,7 @@ _decidiendo = threading.Lock()  # leer historial + decidir + insertar es atómic
 
 @asynccontextmanager
 async def vida(_: FastAPI):
+    anyio.to_thread.current_default_thread_limiter().total_tokens = 120  # 40 por defecto: cada subida espera ~3 s a los modelos
     registro.sembrar_si_vacia(config.data_dir() / "semilla.sqlite")
     registro.conectar().close()  # crea el esquema
     yield
@@ -103,13 +106,10 @@ def publico(d) -> dict:
 
 
 def procesar(doc: Documento) -> int:
-    """Extractor en cuarentena → reglas del mandato → JEV → registro. Devuelve el id de la decisión."""
+    """Lee en paralelo con otras subidas (sin candado) y decide en orden (con candado). Devuelve el id."""
     m = mod_mandato.cargar()
     hoy = config.hoy()
-    with _decidiendo:
-        d = motor.decidir(doc, m, extraer=lambda dc: extractor.extraer(dc, hoy),
-                          preguntar=decisor.preguntar_factura, historial=registro.historial(), hoy=hoy)
-        return registro.insertar(d)
+    return flujo.decidir_y_registrar(doc, m, hoy, flujo.preparar(doc, m, hoy), _decidiendo)[1]
 
 
 def archivos_demo() -> list[Path]:
