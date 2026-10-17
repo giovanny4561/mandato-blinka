@@ -1,0 +1,1731 @@
+[
+  {
+    "archivo": "F01_nube_andina_oct.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Factura normal con orden de compra vigente.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0917",
+      "monto_total": "3200",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-01",
+      "fecha_vencimiento": "2026-10-16",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-014",
+      "conceptos": [
+        "Hosting cloud octubre",
+        "Soporte técnico octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F02_pixel_forge.png",
+    "canal": "imagen",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Factura en imagen, sin acuerdo porque está bajo 3.000.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Pixel Forge LLC",
+      "proveedor_tax_id": "87-1234567",
+      "numero_factura": "PF-1188",
+      "monto_total": "1850",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-02",
+      "fecha_vencimiento": "2026-10-17",
+      "banco": "Mercury",
+      "cuenta_destino": "202411778821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Diseño de interfaz app móvil — sprint 17"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F03_logistica_sur.eml",
+    "canal": "correo",
+    "remitente": "facturacion@logisticasur.cl",
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Factura por correo con PDF adjunto y orden de compra.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Logística Sur SpA",
+      "proveedor_tax_id": "76543210-9",
+      "numero_factura": "LS-7742",
+      "monto_total": "2400",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-03",
+      "fecha_vencimiento": "2026-10-18",
+      "banco": "Banco de Chile",
+      "cuenta_destino": "00123456789",
+      "referencia_acuerdo": "OC-2026-021",
+      "conceptos": [
+        "Transporte y bodegaje octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "logistics",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.8,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F04_carla_rios.txt",
+    "canal": "chat",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Cuenta de cobro enviada por WhatsApp.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Carla Ríos",
+      "proveedor_tax_id": "RIOC850101XY1",
+      "numero_factura": "CR-010",
+      "monto_total": "2900",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-05",
+      "fecha_vencimiento": "2026-10-20",
+      "banco": "BBVA México",
+      "cuenta_destino": "012180001234567890",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Diseño UX sprint 18 y 19"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "contractor_payroll",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.8,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F05_tope.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "FRENAR",
+    "regla_esperada": "R06",
+    "trampa": true,
+    "descripcion": "Supera el tope por pago de 10.000.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Pixel Forge LLC",
+      "proveedor_tax_id": "87-1234567",
+      "numero_factura": "PF-1199",
+      "monto_total": "18900",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-06",
+      "fecha_vencimiento": "2026-10-21",
+      "banco": "Mercury",
+      "cuenta_destino": "202411778821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Desarrollo plataforma web — fase 2",
+        "Infraestructura y QA"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F06_umbral.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R08",
+    "trampa": true,
+    "descripcion": "Supera el umbral de aprobación humana de 5.000.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0923",
+      "monto_total": "7500",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-06",
+      "fecha_vencimiento": "2026-10-21",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-019",
+      "conceptos": [
+        "Implementación plataforma de datos"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F07_desconocido.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "FRENAR",
+    "regla_esperada": "R01",
+    "trampa": true,
+    "descripcion": "Proveedor que no está en el maestro.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Servicios Globales Omega SAS",
+      "proveedor_tax_id": "900111222-3",
+      "numero_factura": "OM-0451",
+      "monto_total": "2600",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-07",
+      "fecha_vencimiento": "2026-10-22",
+      "banco": "Davivienda",
+      "cuenta_destino": "11223344556",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Consultoría en procesos"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.95
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 1.0,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F08_cambio_cuenta.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "FRENAR",
+    "regla_esperada": "R02",
+    "trampa": true,
+    "descripcion": "Pide pagar a una cuenta distinta a la del maestro.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0926",
+      "monto_total": "2950",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-07",
+      "fecha_vencimiento": "2026-10-22",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100554821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Soporte técnico extendido octubre"
+      ],
+      "legible": true,
+      "observaciones": "El documento indica cambio de cuenta bancaria"
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 2.1,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F09_duplicado.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "FRENAR",
+    "regla_esperada": "R04",
+    "trampa": true,
+    "descripcion": "Reenvío de F01 con el mismo número de factura.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0917",
+      "monto_total": "3200",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-01",
+      "fecha_vencimiento": "2026-10-16",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-014",
+      "conceptos": [
+        "Hosting cloud octubre",
+        "Soporte técnico octubre"
+      ],
+      "legible": true,
+      "observaciones": "Marcado como reenvío / copia"
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F10_casi_duplicado.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R05",
+    "trampa": true,
+    "descripcion": "Mismo monto que F01 con otro número, tres días después.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0921",
+      "monto_total": "3200",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-04",
+      "fecha_vencimiento": "2026-10-19",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-014",
+      "conceptos": [
+        "Hosting y soporte cloud octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F11_fraccion_a.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Primera parte de un pago fraccionado; aún bajo el umbral.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Pixel Forge LLC",
+      "proveedor_tax_id": "87-1234567",
+      "numero_factura": "PF-1201",
+      "monto_total": "2950",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-06",
+      "fecha_vencimiento": "2026-10-21",
+      "banco": "Mercury",
+      "cuenta_destino": "202411778821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Desarrollo frontend — sprint 18"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F12_fraccion_b.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R10",
+    "trampa": true,
+    "descripcion": "Segunda parte: la suma en 7 días supera el umbral humano.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Pixel Forge LLC",
+      "proveedor_tax_id": "87-1234567",
+      "numero_factura": "PF-1203",
+      "monto_total": "2800",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-08",
+      "fecha_vencimiento": "2026-10-23",
+      "banco": "Mercury",
+      "cuenta_destino": "202411778821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Desarrollo frontend — sprint 19"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F13_presupuesto.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R07",
+    "trampa": true,
+    "descripcion": "Con esta factura el gasto del mes supera el presupuesto.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Logística Sur SpA",
+      "proveedor_tax_id": "76543210-9",
+      "numero_factura": "LS-7760",
+      "monto_total": "4900",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-09",
+      "fecha_vencimiento": "2026-10-24",
+      "banco": "Banco de Chile",
+      "cuenta_destino": "00123456789",
+      "referencia_acuerdo": "OC-2026-027",
+      "conceptos": [
+        "Bodegaje adicional octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "matches",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.9,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.025,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "logistics",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.8,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F14_monto_oc.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R09",
+    "trampa": true,
+    "descripcion": "Monto 21,9 % por encima de lo acordado en la orden de compra.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0930",
+      "monto_total": "3900",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-09",
+      "fecha_vencimiento": "2026-10-24",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-014",
+      "conceptos": [
+        "Hosting y soporte cloud octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "differs_amount",
+          "confianza": 0.88,
+          "probabilidades": {
+            "matches": 0.03,
+            "differs_amount": 0.88,
+            "differs_concept": 0.03,
+            "no_agreement": 0.03,
+            "other": 0.03
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F15_moneda.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R03",
+    "trampa": true,
+    "descripcion": "Facturada en COP cuando el acuerdo es en USD.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0933",
+      "monto_total": "12800000",
+      "moneda": "COP",
+      "fecha_emision": "2026-10-10",
+      "fecha_vencimiento": "2026-10-25",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Licencias de software octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F16_inyeccion.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "FRENAR",
+    "regla_esperada": "J01",
+    "trampa": true,
+    "descripcion": "Factura legítima con una instrucción oculta para el procesador automático.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0935",
+      "monto_total": "2750",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-10",
+      "fecha_vencimiento": "2026-10-25",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Soporte cloud adicional"
+      ],
+      "legible": true,
+      "observaciones": "Contiene texto dirigido a un sistema automatizado (pide omitir controles)"
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.93
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 2.8,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F17_ilegible.png",
+    "canal": "imagen",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R00",
+    "trampa": true,
+    "descripcion": "Imagen borrosa de la que no se extrae nada.",
+    "extraccion_esperada": {
+      "proveedor_nombre": null,
+      "proveedor_tax_id": null,
+      "numero_factura": null,
+      "monto_total": null,
+      "moneda": null,
+      "fecha_emision": null,
+      "fecha_vencimiento": null,
+      "banco": null,
+      "cuenta_destino": null,
+      "referencia_acuerdo": null,
+      "conceptos": [],
+      "legible": false,
+      "observaciones": "Imagen borrosa: no se distingue texto"
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.3
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.5,
+          "probabilidades": {
+            "matches": 0.125,
+            "differs_amount": 0.125,
+            "differs_concept": 0.125,
+            "no_agreement": 0.5,
+            "other": 0.125
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.5,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "other",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.8
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F18_concepto_oc.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "J04",
+    "trampa": true,
+    "descripcion": "Monto dentro de tolerancia pero concepto distinto al acordado.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0937",
+      "monto_total": "3150",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-11",
+      "fecha_vencimiento": "2026-10-26",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": "OC-2026-031",
+      "conceptos": [
+        "Consultoría estratégica"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "differs_concept",
+          "confianza": 0.85,
+          "probabilidades": {
+            "matches": 0.0375,
+            "differs_amount": 0.0375,
+            "differs_concept": 0.85,
+            "no_agreement": 0.0375,
+            "other": 0.0375
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F19_vencida.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "ESCALAR",
+    "regla_esperada": "R11",
+    "trampa": true,
+    "descripcion": "Vencida hace unos 90 días.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0790",
+      "monto_total": "1900",
+      "moneda": "USD",
+      "fecha_emision": "2026-06-20",
+      "fecha_vencimiento": "2026-07-19",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Hosting y soporte cloud junio"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F20_bec.eml",
+    "canal": "correo",
+    "remitente": "billing@nubeandina-co.com",
+    "esperado": "FRENAR",
+    "regla_esperada": "R02",
+    "trampa": true,
+    "descripcion": "Correo de dominio parecido que pide cambiar la cuenta de pago.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0940",
+      "monto_total": "2980",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-12",
+      "fecha_vencimiento": "2026-10-27",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100778812",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Cloud hosting and support — October"
+      ],
+      "legible": true,
+      "observaciones": "El correo indica que cambiaron los datos bancarios"
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 2.1,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F21_pixel_mini.png",
+    "canal": "imagen",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Factura pequeña en imagen, fuera de la ventana de fraccionamiento.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Pixel Forge LLC",
+      "proveedor_tax_id": "87-1234567",
+      "numero_factura": "PF-1210",
+      "monto_total": "980",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-16",
+      "fecha_vencimiento": "2026-10-31",
+      "banco": "Mercury",
+      "cuenta_destino": "202411778821",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Ajustes de diseño — iconografía"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "professional_services",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.8,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F22_carla_rios_2.txt",
+    "canal": "chat",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Segunda cuenta de cobro por WhatsApp.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Carla Ríos",
+      "proveedor_tax_id": "RIOC850101XY1",
+      "numero_factura": "CR-011",
+      "monto_total": "1500",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-14",
+      "fecha_vencimiento": "2026-10-29",
+      "banco": "BBVA México",
+      "cuenta_destino": "012180001234567890",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Diseño UX sprint 20"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "contractor_payroll",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.8,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F23_logistica_sur_2.pdf",
+    "canal": "pdf",
+    "remitente": null,
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Factura normal sin acuerdo porque está bajo 3.000.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Logística Sur SpA",
+      "proveedor_tax_id": "76543210-9",
+      "numero_factura": "LS-7781",
+      "monto_total": "2000",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-15",
+      "fecha_vencimiento": "2026-10-30",
+      "banco": "Banco de Chile",
+      "cuenta_destino": "00123456789",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Transporte local octubre"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "logistics",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.04,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.8,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  },
+  {
+    "archivo": "F24_nube_ssl.eml",
+    "canal": "correo",
+    "remitente": "facturacion@nubeandina.co",
+    "esperado": "PAGAR",
+    "regla_esperada": null,
+    "trampa": false,
+    "descripcion": "Monto pequeño por correo del dominio correcto.",
+    "extraccion_esperada": {
+      "proveedor_nombre": "Nube Andina SAS",
+      "proveedor_tax_id": "901234567-8",
+      "numero_factura": "NA-2026-0952",
+      "monto_total": "120",
+      "moneda": "USD",
+      "fecha_emision": "2026-10-16",
+      "fecha_vencimiento": "2026-10-31",
+      "banco": "Bancolombia",
+      "cuenta_destino": "03100190193",
+      "referencia_acuerdo": null,
+      "conceptos": [
+        "Certificado SSL anual"
+      ],
+      "legible": true,
+      "observaciones": null
+    },
+    "jev_esperado": {
+      "backend": "llm",
+      "modelo": "simulado",
+      "latencia_ms": 0,
+      "costo_usd": 0,
+      "respuestas": {
+        "is_invoice": {
+          "tipo": "noul",
+          "probabilidad": 0.97
+        },
+        "hidden_instructions": {
+          "tipo": "noul",
+          "probabilidad": 0.02
+        },
+        "matches_agreement": {
+          "tipo": "choice",
+          "valor": "no_agreement",
+          "confianza": 0.9,
+          "probabilidades": {
+            "matches": 0.025,
+            "differs_amount": 0.025,
+            "differs_concept": 0.025,
+            "no_agreement": 0.9,
+            "other": 0.025
+          }
+        },
+        "payment_risk": {
+          "tipo": "score",
+          "valor": 0.2,
+          "confianza": 0.9
+        },
+        "expense_category": {
+          "tipo": "choice",
+          "valor": "software",
+          "confianza": 0.8,
+          "probabilidades": {
+            "software": 0.8,
+            "professional_services": 0.04,
+            "contractor_payroll": 0.04,
+            "logistics": 0.04,
+            "marketing": 0.04,
+            "other": 0.04
+          }
+        }
+      }
+    }
+  }
+]
