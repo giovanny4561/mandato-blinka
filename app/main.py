@@ -9,6 +9,7 @@ import re
 import threading
 from contextlib import asynccontextmanager
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -253,11 +254,22 @@ def panel(request: Request):
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 
 
+def pagina_mandato(request: Request, status: int = 200, **ctx):
+    m = mod_mandato.cargar()
+    ctx = {"json": m.model_dump_json(indent=2), "error": None, "error_limites": None, "guardado": False} | ctx
+    return render(request, "mandato.html", status, mandato=m, hash=mod_mandato.hash_de(m), consumido=consumido_mes(m),
+                  mes=MESES_LARGOS[config.hoy().month - 1], **ctx)
+
+
+def motivo(e: ValidationError) -> str:
+    primero = e.errors()[0]
+    donde = ".".join(str(x) for x in primero["loc"]) or "raíz"
+    return f"El mandato no es válido en «{donde}»: {primero['msg']}. No se guardó nada."
+
+
 @app.get("/mandato", response_class=HTMLResponse, include_in_schema=False)
 def ver_mandato(request: Request, guardado: bool = False):
-    m = mod_mandato.cargar()
-    return render(request, "mandato.html", mandato=m, hash=mod_mandato.hash_de(m), consumido=consumido_mes(m),
-                  json=m.model_dump_json(indent=2), error=None, guardado=guardado, mes=MESES_LARGOS[config.hoy().month - 1])
+    return pagina_mandato(request, guardado=guardado)
 
 
 @app.post("/mandato", response_class=HTMLResponse, include_in_schema=False)
@@ -266,12 +278,25 @@ def guardar_mandato(request: Request, json: str = Form(...), pin: str = Form(...
     try:
         nuevo = Mandato.model_validate_json(json)
     except ValidationError as e:
-        m = mod_mandato.cargar()
-        primero = e.errors()[0]
-        donde = ".".join(str(x) for x in primero["loc"]) or "raíz"
-        return render(request, "mandato.html", 400, mandato=m, hash=mod_mandato.hash_de(m), consumido=consumido_mes(m),
-                      json=json, error=f"El mandato no es válido en «{donde}»: {primero['msg']}. No se guardó nada.",
-                      guardado=False, mes=MESES_LARGOS[config.hoy().month - 1])
+        return pagina_mandato(request, 400, json=json, error=motivo(e))
+    mod_mandato.guardar(nuevo)
+    return RedirectResponse("/mandato?guardado=1", status_code=303)
+
+
+@app.post("/mandato/limites", response_class=HTMLResponse, include_in_schema=False)
+def guardar_limites(request: Request, pin: str = Form(...), tope_por_pago: Decimal = Form(...),
+                    umbral_aprobacion_humana: Decimal = Form(...), presupuesto: Decimal = Form(...),
+                    exigir_acuerdo_desde: Decimal = Form(...), tolerancia_pct: Decimal = Form(...)):
+    """Formulario simple: cambia solo los cinco límites y valida el mandato completo antes de guardar."""
+    exigir_pin(pin)
+    datos = mod_mandato.cargar().model_dump()
+    datos["limites"] |= {"tope_por_pago": tope_por_pago, "umbral_aprobacion_humana": umbral_aprobacion_humana}
+    datos["limites"]["presupuesto_periodo"]["monto"] = presupuesto
+    datos["conciliacion"] |= {"exigir_acuerdo_desde": exigir_acuerdo_desde, "tolerancia_pct": tolerancia_pct}
+    try:
+        nuevo = Mandato.model_validate(datos)
+    except ValidationError as e:
+        return pagina_mandato(request, 400, error_limites=motivo(e))
     mod_mandato.guardar(nuevo)
     return RedirectResponse("/mandato?guardado=1", status_code=303)
 

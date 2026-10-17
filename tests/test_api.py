@@ -42,11 +42,13 @@ def test_pendientes_exige_pin_y_resuelve():
 
 # ---------- bandeja y mandato (extractor y JEV simulados) ----------
 import json
+from decimal import Decimal
 import shutil
 
 import pytest
 
 from app import decisor, extractor
+from app import mandato as mod_mandato
 from app.modelos import RespuestaJEV, RespuestasJEV
 from tests.conftest import RAIZ, hacer_extraccion
 
@@ -113,9 +115,32 @@ def test_mandato_ver_y_guardar_con_pin():
         assert c.post("/mandato", data={"json": json.dumps(bueno), "pin": "mal"}).status_code == 403
         r = c.post("/mandato", data={"json": json.dumps(bueno), "pin": "123456"}, follow_redirects=False)
         assert r.status_code == 303
-        assert "12.000" in c.get("/mandato").text
+        assert 'value="12000"' in c.get("/mandato").text
         r = c.post("/mandato", data={"json": '{"version": "x"}', "pin": "123456"})
         assert r.status_code == 400 and "no es válido" in r.text
+
+
+def test_reglas_simples_cambian_solo_los_limites():
+    limites = {"tope_por_pago": "9000", "umbral_aprobacion_humana": "4000", "presupuesto": "20000",
+               "exigir_acuerdo_desde": "2500", "tolerancia_pct": "2.5"}
+    with TestClient(app) as c:
+        antes = mod_mandato.cargar()
+        assert "Reglas de pago" in c.get("/mandato").text
+        assert c.post("/mandato/limites", data=limites | {"pin": "mal"}).status_code == 403
+        r = c.post("/mandato/limites", data=limites | {"pin": "123456"}, follow_redirects=False)
+        assert r.status_code == 303
+        m = mod_mandato.cargar()
+        assert (m.limites.tope_por_pago, m.limites.umbral_aprobacion_humana) == (9000, 4000)
+        assert m.limites.presupuesto_periodo.monto == 20000
+        assert (m.conciliacion.exigir_acuerdo_desde, m.conciliacion.tolerancia_pct) == (2500, Decimal("2.5"))
+        assert m.proveedores_permitidos == antes.proveedores_permitidos and m.acuerdos == antes.acuerdos
+        assert mod_mandato.hash_de(m) != mod_mandato.hash_de(antes)
+        # umbral humano sobre el tope: se rechaza y no se guarda nada
+        r = c.post("/mandato/limites", data=limites | {"umbral_aprobacion_humana": "9500", "pin": "123456"})
+        assert r.status_code == 400 and "aprobación humana" in r.text
+        r = c.post("/mandato/limites", data=limites | {"tolerancia_pct": "150", "pin": "123456"})
+        assert r.status_code in (400, 422)
+        assert mod_mandato.cargar() == m
 
 
 

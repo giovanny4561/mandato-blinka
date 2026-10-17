@@ -30,22 +30,28 @@ class Empresa(Estricto):
 
 
 class PresupuestoPeriodo(Estricto):
-    monto: Decimal
+    monto: Decimal = Field(gt=0)
     recurrencia: Literal["mensual"] = "mensual"
 
 
 class Limites(Estricto):
-    tope_por_pago: Decimal
-    umbral_aprobacion_humana: Decimal
+    tope_por_pago: Decimal = Field(gt=0)
+    umbral_aprobacion_humana: Decimal = Field(gt=0)
     presupuesto_periodo: PresupuestoPeriodo
     ventana_fraccionamiento_dias: int = 7
     ventana_casi_duplicado_dias: int = 10
 
+    @model_validator(mode="after")
+    def _umbral_bajo_el_tope(self):
+        if self.umbral_aprobacion_humana > self.tope_por_pago:
+            raise ValueError("la aprobación humana debe empezar en el tope por pago o por debajo")
+        return self
+
 
 class Conciliacion(Estricto):
-    tolerancia_pct: Decimal = Decimal(5)
-    tolerancia_abs: Decimal = Decimal(50)
-    exigir_acuerdo_desde: Decimal = Decimal(3000)
+    tolerancia_pct: Decimal = Field(Decimal(5), ge=0, le=100)
+    tolerancia_abs: Decimal = Field(Decimal(50), ge=0)
+    exigir_acuerdo_desde: Decimal = Field(Decimal(3000), ge=0)
 
 
 class UmbralesJEV(Estricto):

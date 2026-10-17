@@ -115,9 +115,6 @@ p { margin: 0; }
 .datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding-top: 18px; border-top: 1px solid var(--linea); }
 .datos dt { color: var(--tinta-2); font-size: .8125rem; }
 .datos dd { margin: 2px 0 0; font-size: 1.0625rem; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-.datos--limites { background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); padding: 22px 24px; border-top: 0; }
-.datos--limites dd { font-size: 1.25rem; }
-.datos--limites p { margin-top: 2px; }
 
 /* Registro con forma de movimientos bancarios */
 .movimientos { list-style: none; margin: 0; padding: 6px; display: grid; background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); }
@@ -205,6 +202,13 @@ textarea.codigo { height: 380px; padding: 12px 14px; font: .8125rem/1.5 var(--mo
 .dos-columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .formulario { padding: 24px; display: grid; gap: 14px; align-content: start; }
 .formulario .boton { justify-self: start; }
+.reglas { padding: 22px 24px; display: grid; gap: 18px; }
+.reglas .seccion-cabeza { margin: 0; }
+.reglas__campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px 16px; }
+.reglas__campos .campo { align-content: start; }
+.reglas__campos label { color: var(--tinta-2); font-size: .8125rem; }
+.reglas__campos input { font-size: 1.0625rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.reglas__pie { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--linea); }
 .editor { padding: 18px 22px; }
 .editor summary { font-size: .9375rem; font-weight: 500; color: var(--tinta); }
 .editor form { display: grid; gap: 12px; margin-top: 14px; }

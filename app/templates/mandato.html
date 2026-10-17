@@ -8,12 +8,32 @@
 </div>
 {% if guardado %}<p class="aviso aviso--ok" role="status">Mandato guardado. Versión nueva <code>{{ hash }}</code>.</p>{% endif %}
 
-<dl class="datos datos--limites">
-  <div><dt>Tope por pago</dt><dd>{{ mandato.limites.tope_por_pago|monto(base) }}</dd><p class="tenue">Más que esto se frena</p></div>
-  <div><dt>Aprobación humana desde</dt><dd>{{ mandato.limites.umbral_aprobacion_humana|monto(base) }}</dd><p class="tenue">Más que esto se escala</p></div>
-  <div><dt>Presupuesto de {{ mes }}</dt><dd>{{ consumido|monto(base) }}</dd><p class="tenue">de {{ mandato.limites.presupuesto_periodo.monto|dinero }} · <span class="medidor medidor--linea"><span style="width: {{ [100, (consumido / (mandato.limites.presupuesto_periodo.monto|float) * 100)|round|int]|min }}%"></span></span></p></div>
-  <div><dt>Acuerdo exigido desde</dt><dd>{{ mandato.conciliacion.exigir_acuerdo_desde|monto(base) }}</dd><p class="tenue">Tolerancia {{ mandato.conciliacion.tolerancia_pct|num(0) }} %</p></div>
-</dl>
+<form class="tarjeta reglas" method="post" action="/mandato/limites" aria-labelledby="t-reglas">
+  <div class="seccion-cabeza"><h2 id="t-reglas">Reglas de pago</h2><span class="tenue">Montos en {{ base }}</span></div>
+  {% if error_limites %}<p class="error" role="alert">{{ error_limites }}</p>{% endif %}
+  <div class="reglas__campos">
+    <div class="campo"><label for="r-tope">Tope por pago</label>
+      <input id="r-tope" name="tope_por_pago" type="number" min="0.01" step="0.01" inputmode="decimal" value="{{ mandato.limites.tope_por_pago }}" required aria-describedby="a-tope">
+      <p class="tenue" id="a-tope">Más que esto se frena</p></div>
+    <div class="campo"><label for="r-umbral">Aprobación humana desde</label>
+      <input id="r-umbral" name="umbral_aprobacion_humana" type="number" min="0.01" step="0.01" inputmode="decimal" value="{{ mandato.limites.umbral_aprobacion_humana }}" required aria-describedby="a-umbral">
+      <p class="tenue" id="a-umbral">Más que esto pasa a una persona</p></div>
+    <div class="campo"><label for="r-presupuesto">Presupuesto mensual</label>
+      <input id="r-presupuesto" name="presupuesto" type="number" min="0.01" step="0.01" inputmode="decimal" value="{{ mandato.limites.presupuesto_periodo.monto }}" required aria-describedby="a-presupuesto">
+      <p class="tenue" id="a-presupuesto">{{ mes|capitalize }}: {{ consumido|dinero }} pagado <span class="medidor medidor--linea"><span style="width: {{ [100, (consumido / (mandato.limites.presupuesto_periodo.monto|float) * 100)|round|int]|min }}%"></span></span></p></div>
+    <div class="campo"><label for="r-acuerdo">Exigir acuerdo desde</label>
+      <input id="r-acuerdo" name="exigir_acuerdo_desde" type="number" min="0" step="0.01" inputmode="decimal" value="{{ mandato.conciliacion.exigir_acuerdo_desde }}" required aria-describedby="a-acuerdo">
+      <p class="tenue" id="a-acuerdo">Sin orden de compra o contrato, se escala</p></div>
+    <div class="campo"><label for="r-tolerancia">Tolerancia (%)</label>
+      <input id="r-tolerancia" name="tolerancia_pct" type="number" min="0" max="100" step="0.1" inputmode="decimal" value="{{ mandato.conciliacion.tolerancia_pct }}" required aria-describedby="a-tolerancia">
+      <p class="tenue" id="a-tolerancia">Diferencia aceptada frente al acuerdo</p></div>
+  </div>
+  <div class="reglas__pie">
+    <div class="campo campo--pin"><label for="pin-reglas">PIN</label>
+      <input id="pin-reglas" name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>
+    <button class="boton">Guardar reglas</button>
+  </div>
+</form>
 
 <section aria-labelledby="t-prov">
   <div class="seccion-cabeza"><h2 id="t-prov">Beneficiarios permitidos</h2><span class="tenue">{{ mandato.proveedores_permitidos|length }}</span></div>
@@ -44,7 +64,7 @@
 </section>
 
 <details class="tarjeta editor" {% if error %}open{% endif %}>
-  <summary>Editar el mandato</summary>
+  <summary>Edición avanzada: el mandato completo en JSON</summary>
   <form method="post" action="/mandato">
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
     <label for="json">Mandato en JSON. Se valida completo antes de guardar.</label>
