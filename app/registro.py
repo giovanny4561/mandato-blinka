@@ -9,6 +9,7 @@ desde ese punto y `verificar()` dice dónde.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import shutil
@@ -51,6 +52,15 @@ CREATE TABLE IF NOT EXISTS decisiones (
   latencia_ms INTEGER NOT NULL DEFAULT 0,
   hash_previo TEXT,
   hash TEXT
+);
+CREATE TABLE IF NOT EXISTS anclajes (
+  id {ID},
+  ts TEXT NOT NULL,
+  fila_id INTEGER NOT NULL,
+  hash TEXT NOT NULL,
+  mensaje TEXT NOT NULL,
+  ots_b64 TEXT NOT NULL,
+  calendarios TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_decisiones_prov ON decisiones(proveedor_id, numero_factura);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_decisiones_ref ON decisiones(referencia_a) WHERE referencia_a IS NOT NULL;
@@ -268,6 +278,31 @@ def verificar(db: Destino = None) -> dict:
     return {"integro": True, "filas": len(filas), "alterada_en": None, "cabeza": cabeza}
 
 
+def insertar_anclaje(cabeza: dict, mensaje: str, ots: bytes, calendarios: list[str], db: Destino = None) -> dict:
+    fila = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"), "fila_id": cabeza["id"],
+            "hash": cabeza["hash"], "mensaje": mensaje, "ots_b64": base64.b64encode(ots).decode(),
+            "calendarios": json.dumps(calendarios)}
+    sql = f"INSERT INTO anclajes ({', '.join(fila)}) VALUES ({','.join('?' * len(fila))})"
+    with conectar(db) as con:
+        if con.pg:
+            fila["id"] = int(con.execute(sql + " RETURNING id", tuple(fila.values())).fetchone()["id"])
+        else:
+            fila["id"] = int(con.execute(sql, tuple(fila.values())).lastrowid)
+    return fila
+
+
+def anclajes(limite: int = 20, db: Destino = None) -> list[dict]:
+    """Anclajes en OpenTimestamps, el más reciente primero (con la prueba .ots en base64)."""
+    with conectar(db) as con:
+        return [dict(r) for r in con.execute("SELECT * FROM anclajes ORDER BY id DESC LIMIT ?", (limite,)).fetchall()]
+
+
+def anclaje(id_: int, db: Destino = None) -> dict | None:
+    with conectar(db) as con:
+        r = con.execute("SELECT * FROM anclajes WHERE id = ?", (id_,)).fetchone()
+    return dict(r) if r else None
+
+
 def historial(db: Destino = None) -> list[EntradaHistorial]:
     with conectar(db) as con:
         filas = con.execute(
@@ -339,7 +374,8 @@ def reiniciar(db: Destino = None) -> None:
     """Borra todas las decisiones. SOLO para scripts de evaluación y tests; la app nunca lo llama."""
     with conectar(db) as con:
         if con.pg:
-            con.execute("TRUNCATE decisiones RESTART IDENTITY")
+            con.execute("TRUNCATE decisiones, anclajes RESTART IDENTITY")
         else:
             con.execute("DELETE FROM decisiones")
-            con.execute("DELETE FROM sqlite_sequence WHERE name = 'decisiones'")
+            con.execute("DELETE FROM anclajes")
+            con.execute("DELETE FROM sqlite_sequence WHERE name IN ('decisiones', 'anclajes')")

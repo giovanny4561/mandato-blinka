@@ -50,6 +50,11 @@ def hoy() -> date:
     return date.fromisoformat(v) if v else date.today()
 
 
+def ancla_minutos() -> float:
+    """Cada cuántos minutos se ancla la cabeza del registro en OpenTimestamps si cambió. 0 = nunca (tests)."""
+    return float(os.getenv("ANCLA_MINUTOS", "10"))
+
+
 def sello_llave() -> str:
     """Llave privada Ed25519 en base64 (32 bytes) para firmar la cabeza del registro. Vacía: se usa DATA_DIR/sello.key."""
     return os.getenv("SELLO_LLAVE", "")

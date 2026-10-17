@@ -9,6 +9,7 @@ Las acciones que gastan créditos o cambian estado exigen un PIN de operador. La
 - [Métricas](/api/metricas): totales PAGAR/ESCALAR/FRENAR, autonomía, pagos fuera de reglas (debe ser 0), costo.
 - [Decisiones](/api/decisiones): registro con extracción, 18 controles, respuestas de JEV y explicación.
 - [Integridad](/api/integridad): verifica la cadena de hashes del registro y devuelve la cabeza firmada con Ed25519 y la llave pública.
+- [Anclajes](/api/anclajes): cabezas del registro ancladas en Bitcoin con OpenTimestamps; cada una con su archivo y su prueba .ots.
 - [Repetición en vivo](/api/repeticion): stream SSE que reproduce las decisiones registradas.
 
 ## Documentación

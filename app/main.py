@@ -1,5 +1,6 @@
 """Mandato — FastAPI: panel, mandato, bandeja, decisiones, pendientes y /api."""
 import asyncio
+import base64
 
 import anyio
 import hmac
@@ -15,13 +16,13 @@ from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import config, decisor, documentos, extractor, firma, flujo, motor, registro
+from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -78,7 +79,20 @@ async def vida(_: FastAPI):
     registro.sembrar_si_vacia(config.data_dir() / "semilla.sqlite")
     registro.conectar().close()  # crea el esquema
     firma.llave()  # crea sello.key una sola vez y falla al arrancar si SELLO_LLAVE está mal formada
+    parar = threading.Event()
+    if config.ancla_minutos() > 0:
+        threading.Thread(target=anclar_cada, args=(parar, config.ancla_minutos() * 60), daemon=True).start()
     yield
+    parar.set()
+
+
+def anclar_cada(parar: threading.Event, segundos: float) -> None:
+    """Si la cadena creció, ancla su cabeza en OpenTimestamps. Un calendario caído no detiene nada."""
+    while not parar.wait(segundos):
+        try:
+            ancla.anclar_cabeza()
+        except Exception as e:
+            logging.warning("anclaje en OpenTimestamps falló: %r", e)
 
 
 app = FastAPI(title="Mandato", lifespan=vida, version="1.0",
@@ -174,6 +188,48 @@ def api_integridad():
     return v | {"firma": firma.firmar_cabeza(v["cabeza"]) if v["cabeza"] else None}
 
 
+@app.get("/api/anclajes", operation_id="anclajes",
+         summary="Cabezas del registro ancladas en Bitcoin con OpenTimestamps (sin la prueba binaria)")
+def api_anclajes():
+    return [{k: v for k, v in a.items() if k != "ots_b64"} | {"calendarios": json.loads(a["calendarios"]),
+            "prueba": f"/api/anclajes/{a['id']}/prueba.ots", "archivo": f"/api/anclajes/{a['id']}/cabeza.json"}
+            for a in registro.anclajes(50)]
+
+
+def _anclaje(id_: int) -> dict:
+    a = registro.anclaje(id_)
+    if a is None:
+        raise HTTPException(404, "anclaje no encontrado")
+    return a
+
+
+@app.get("/api/anclajes/{id_}/prueba.ots", include_in_schema=False)
+def api_anclaje_prueba(id_: int):
+    a = _anclaje(id_)
+    return Response(base64.b64decode(a["ots_b64"]), media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="cabeza-{a["fila_id"]}.json.ots"'})
+
+
+@app.get("/api/anclajes/{id_}/cabeza.json", include_in_schema=False)
+def api_anclaje_archivo(id_: int):
+    """Los bytes exactos que se anclaron: junto con el .ots se verifican en opentimestamps.org."""
+    a = _anclaje(id_)
+    return Response(a["mensaje"].encode(), media_type="application/json",
+                    headers={"Content-Disposition": f'attachment; filename="cabeza-{a["fila_id"]}.json"'})
+
+
+@app.post("/api/anclajes", operation_id="anclar", summary="Ancla ya la cabeza del registro en OpenTimestamps (requiere PIN)")
+def api_anclar(pin: str = Form(...)):
+    exigir_pin(pin)
+    try:
+        a = ancla.anclar_cabeza()
+    except RuntimeError as e:
+        raise HTTPException(502, str(e))
+    if a is None:
+        raise HTTPException(409, "no hay cabeza íntegra que anclar")
+    return {k: v for k, v in a.items() if k != "ots_b64"}
+
+
 @app.get("/api/decisiones", operation_id="decisiones", summary="Registro de decisiones con controles, JEV y explicación (cuentas enmascaradas)")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
@@ -258,7 +314,7 @@ async def leer_subida(archivo: UploadFile) -> Documento:
 def panel(request: Request):
     m = mod_mandato.cargar()
     return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(8),
-                  integridad=registro.verificar(),
+                  integridad=registro.verificar(), anclaje=(registro.anclajes(1) or [None])[0],
                   backend_jev=config.jev_backend(), demo_en_curso=_demo.locked(),
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 

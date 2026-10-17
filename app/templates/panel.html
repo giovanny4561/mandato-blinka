@@ -43,6 +43,7 @@
       {% if s.integro %}
       <p class="invariante__titulo">Registro íntegro</p>
       <p class="invariante__texto">Las <span class="cifra">{{ s.filas }}</span> filas están encadenadas por hash: cambiar o borrar una rompe la cadena desde ese punto. Cabeza <code>{{ s.cabeza.hash[:12] }}</code>, firmada con Ed25519 en <a class="enlace" href="/api/integridad">/api/integridad</a>.</p>
+      <p class="invariante__texto">{% if anclaje %}Anclada en Bitcoin con OpenTimestamps hasta la fila #{{ anclaje.fila_id }} ({{ anclaje.ts|hora }}){% if anclaje.fila_id != s.cabeza.id %}; las filas nuevas se anclan en minutos{% endif %}: <a class="enlace" href="/api/anclajes/{{ anclaje.id }}/prueba.ots">prueba .ots</a> y <a class="enlace" href="/api/anclajes/{{ anclaje.id }}/cabeza.json">archivo</a>, verificables en opentimestamps.org.{% else %}La cabeza se ancla en Bitcoin con OpenTimestamps unos minutos después de cada cambio.{% endif %}</p>
       {% else %}
       <p class="invariante__titulo">Registro alterado en la fila <a class="enlace" href="/decisiones/{{ s.alterada_en }}">#{{ s.alterada_en }}</a></p>
       <p class="invariante__texto">Esa fila ya no coincide con su hash o con el de la anterior. Alguien editó o borró una decisión por fuera de la app.</p>

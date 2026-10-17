@@ -18,6 +18,7 @@ def entorno(tmp_path, monkeypatch):
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     monkeypatch.setenv("MANDATO_HOY", "2026-10-17")
     monkeypatch.setenv("APROBADOR_PIN", "123456")
+    monkeypatch.setenv("ANCLA_MINUTOS", "0")  # sin red: el anclaje se prueba con calendarios simulados
     monkeypatch.setenv("JEV_BACKEND", "llm")
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     shutil.copy(RAIZ / "data" / "mandato.json", tmp_path / "mandato.json")

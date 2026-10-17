@@ -24,7 +24,8 @@ suplantación por correo afectó al 74 % de las empresas.
    si coincide con lo acordado. JEV puede endurecer una decisión y nada más.
 4. El agente registra PAGAR, ESCALAR o FRENAR con la regla que decidió, en un registro sellado:
    cada fila guarda el hash de la anterior y la cabeza de la cadena va firmada con Ed25519. Si alguien
-   edita o borra una decisión en la base, el panel dice en qué fila. Una persona aprueba lo escalado
+   edita o borra una decisión en la base, el panel dice en qué fila. Cada 10 minutos la cabeza se ancla en
+   Bitcoin con OpenTimestamps: ni nosotros podemos reescribir la historia sin que se note. Una persona aprueba lo escalado
    con su PIN, y esa aprobación es una fila nueva de la cadena.
 
 ## Demo en vivo (60 s)
@@ -36,11 +37,11 @@ suplantación por correo afectó al 74 % de las empresas.
 - Pendientes: F06 supera el umbral humano. La apruebo con el PIN y el registro suma una fila que apunta a la escalada.
 - Detalle de cualquier factura: la línea de pasos muestra el recorrido (recibida, leída por dos modelos, JEV, 18 controles, control decisivo).
 - Mandato: cambio el tope en el formulario de reglas y el hash de la versión cambia con él.
-- Panel: "Registro íntegro" y `/api/integridad` con la cabeza firmada.
+- Panel: "Registro íntegro", `/api/integridad` con la cabeza firmada y la prueba `.ots` del anclaje en Bitcoin.
 
 ## Los tres criterios del jurado (20 s)
 - Autonomía: el agente paga lo que cabe en el mandato y frena lo que lo viola sin pedir ayuda.
-- Seguridad: "PAGAR implica todas las reglas en orden" es una invariante. La prueban 177 tests y el panel la recalcula en cada carga; el registro sellado prueba que nadie la reescribió después. El LLM extrae; las reglas deciden.
+- Seguridad: "PAGAR implica todas las reglas en orden" es una invariante. La prueban 180 tests y el panel la recalcula en cada carga; el registro sellado prueba que nadie la reescribió después. El LLM extrae; las reglas deciden.
 - Explicabilidad: cada decisión cita la regla, la evidencia y un texto en español que sale de una plantilla.
 
 ## Hacia dónde va (20 s)
@@ -49,8 +50,7 @@ en `pending` todo beneficiario que crea un agente hasta que una persona lo aprue
 nuestro ESCALAR. El paso siguiente: que el agente del proveedor presente la factura directo al
 agente de la empresa (HTTP 402) y Mandato la decida con el mismo mandato. Cuando la decisión sea PAGAR,
 x402 sería la capa que ejecuta el pago en USDC por los rieles de Blinka; hoy el reto excluye mover
-dinero y por eso queda como visión. El sellado también crece: anclar la cabeza firmada en Bitcoin con
-OpenTimestamps, gratis y sin billetera.
+dinero y por eso queda como visión.
 
 ## Preguntas para la mentora (UX, pitch, GTM)
 1. ¿El panel transmite seguridad en cinco segundos o le falta una cifra más grande arriba?
@@ -60,4 +60,4 @@ OpenTimestamps, gratis y sin billetera.
 5. ¿Le falta algo al entregable: repo público, demo en vivo, video, playbook de JEV, SDD?
 
 ## Cifras a mano
-24/24 de exactitud · 0 pagos fuera de reglas · 15 casos trampa y ninguno pagado · 62,5 % de autonomía · US$ 0,0299 el set (US$ 0,00125 por factura) · 3,5 s por factura · 177 tests, 95 % de cobertura · registro sellado (sha256 encadenado + Ed25519) · JEV: 70 a 500 ms y US$ 0,042 por millón de tokens.
+24/24 de exactitud · 0 pagos fuera de reglas · 15 casos trampa y ninguno pagado · 62,5 % de autonomía · US$ 0,0299 el set (US$ 0,00125 por factura) · 3,5 s por factura · 180 tests, 95 % de cobertura · registro sellado (sha256 encadenado + Ed25519 + anclaje en Bitcoin con OpenTimestamps) · JEV: 70 a 500 ms y US$ 0,042 por millón de tokens.

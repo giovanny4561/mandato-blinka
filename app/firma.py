@@ -23,9 +23,14 @@ def b64(datos: bytes) -> str:
     return base64.b64encode(datos).decode()
 
 
+def mensaje_de(cabeza: dict) -> str:
+    """JSON canónico de la cabeza ({"id", "hash"}): lo que se firma y lo que se ancla en Bitcoin."""
+    return json.dumps(cabeza, separators=(",", ":"), sort_keys=True)
+
+
 def firmar_cabeza(cabeza: dict) -> dict:
-    """Firma el JSON canónico de la cabeza ({"id", "hash"}) y devuelve el mensaje exacto, la firma y la llave pública."""
-    mensaje = json.dumps(cabeza, separators=(",", ":"), sort_keys=True)
+    """Firma el JSON canónico de la cabeza y devuelve el mensaje exacto, la firma y la llave pública."""
+    mensaje = mensaje_de(cabeza)
     k = llave()
     return {"algoritmo": "Ed25519", "mensaje": mensaje, "firma": b64(k.sign(mensaje.encode())),
             "llave_publica": b64(k.public_key().public_bytes_raw())}
