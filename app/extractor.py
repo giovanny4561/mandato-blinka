@@ -25,7 +25,7 @@ Use null when a value is not present. Never guess."""
 
 CAMPOS = list(Extraccion.model_fields)
 CAMPOS_TEXTO = {"proveedor_nombre", "proveedor_tax_id", "numero_factura", "banco", "cuenta_destino", "referencia_acuerdo", "observaciones"}
-MONEDAS_COMA_DECIMAL = {"COP", "ARS", "CLP", "BRL", "EUR", "UYU", "PYG", "VES"}
+MONEDAS_COMA_DECIMAL = {"COP", "ARS", "CLP", "BRL", "EUR", "BOB", "CRC", "UYU", "PYG", "VES"}
 
 
 def llamar_modelo(modelo: str, doc: Documento, hoy: date) -> tuple[dict, float]:

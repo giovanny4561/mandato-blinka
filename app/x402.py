@@ -7,6 +7,7 @@ y la red es Base Sepolia (pruebas). Las billeteras de data/mandato.json son inve
 import hashlib
 from datetime import datetime
 
+from app import rieles
 from app.modelos import Decision, Proveedor
 
 RED = "eip155:84532"  # Base Sepolia, formato CAIP-2
@@ -14,16 +15,10 @@ USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"  # USDC de prueba de Circle 
 SEGUNDOS = 300
 
 
-def riel(prov: Proveedor | None) -> str | None:
-    if prov is None:
-        return None
-    return "USDC por x402 (simulado)" if prov.acepta_usdc and prov.billetera_usdc else f"Transferencia a {prov.banco}"
-
-
 def orden(d: Decision, prov: Proveedor | None) -> dict | None:
     """PaymentPayload x402 sin firma para una decisión PAGAR en USD a un proveedor con billetera USDC; si no, None."""
     e = d.extraccion
-    if d.decision != "PAGAR" or riel(prov) != "USDC por x402 (simulado)" or e.moneda != "USD" or e.monto_total is None:
+    if d.decision != "PAGAR" or "x402" not in (rieles.etiqueta(prov) or "") or e.moneda != "USD" or e.monto_total is None:
         return None
     monto = str(int(e.monto_total * 10**6))  # USDC tiene 6 decimales
     desde = int(datetime.fromisoformat(d.ts).timestamp()) if d.ts else 0

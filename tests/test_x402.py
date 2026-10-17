@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import mandato as mod_mandato
-from app import registro, x402
+from app import registro, rieles, x402
 from app.main import app
 from tests.conftest import hacer_decision, hacer_extraccion
 
@@ -24,12 +24,12 @@ def test_orden_para_un_pago_en_usdc():
     assert o["accepted"]["amount"] == o["payload"]["authorization"]["value"] == "1250500000"
     assert o["accepted"]["payTo"] == pixel.billetera_usdc and o["payload"]["signature"] is None
     assert o["extensions"]["mandato"]["simulada"] and o["extensions"]["mandato"]["sello"] == d.sello
-    assert x402.riel(pixel) == "USDC por x402 (simulado)"
+    assert rieles.etiqueta(pixel) == "USDC en Base por x402 (simulado)"
 
 
 def test_sin_orden_si_no_es_pagar_o_no_acepta_usdc():
     nube = proveedor("PRV-001")
-    assert x402.riel(nube) == "Transferencia a Bancolombia"
+    assert rieles.etiqueta(nube) == "SWIFT (USD)"
     assert x402.orden(hacer_decision(), nube) is None
     assert x402.orden(hacer_decision(decision="ESCALAR"), proveedor("PRV-002")) is None
     assert x402.orden(hacer_decision(extraccion=hacer_extraccion(moneda="COP")), proveedor("PRV-002")) is None
@@ -49,5 +49,7 @@ def test_api_y_detalle():
         assert c.get(f"/api/decisiones/{pagada}/x402").json()["accepted"]["scheme"] == "exact"
         assert c.get(f"/api/decisiones/{otra}/x402").status_code == 404
         assert c.get("/api/decisiones/9999/x402").status_code == 404
-        assert "Orden de pago x402" in c.get(f"/decisiones/{pagada}").text
-        assert "Orden de pago x402" not in c.get(f"/decisiones/{otra}").text
+        usdc, swift = c.get(f"/decisiones/{pagada}").text, c.get(f"/decisiones/{otra}").text
+        assert "Orden de pago por USDC" in usdc and "JSON de x402" in usdc
+        assert "Orden de pago por SWIFT" in swift and "JSON de x402" not in swift
+        assert c.get(f"/api/decisiones/{otra}/orden").json()["riel"] == "SWIFT"

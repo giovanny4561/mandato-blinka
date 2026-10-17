@@ -14,9 +14,11 @@ import importlib.util
 import json
 import math
 import random
+import re
 import shutil
 import sys
 from datetime import date, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -57,20 +59,76 @@ DESCRIPCION = {
 }
 
 
-def billetera(prov_id: str) -> str:
-    return "0x" + hashlib.sha256(f"mandato-demo-simulada:{prov_id}".encode()).hexdigest()[:40]
+# tasas de referencia del mandato: unidades por 1 USD (para medir límites; la tasa real del pago la pone Blinka)
+TASAS = {"COP": 4100, "MXN": 18.5, "CLP": 950, "PEN": 3.75, "BRL": 5.4, "EUR": 0.92, "ARS": 1400, "BOB": 6.96,
+         "CRC": 505, "ZAR": 17.8}
+_B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def billetera(prov_id: str, red: str = "base") -> str:
+    h = hashlib.sha256(f"mandato-demo-simulada:{prov_id}".encode()).digest()
+    if red != "solana":
+        return "0x" + h.hex()[:40]
+    n, out = int.from_bytes(h, "big"), ""
+    while n:
+        n, r = divmod(n, 58)
+        out = _B58[r] + out
+    return out
+
+
+def clabe(base17: str) -> str:
+    suma = sum(int(x) * (3, 7, 1)[i % 3] % 10 for i, x in enumerate(base17))
+    return base17 + str((10 - suma % 10) % 10)
+
+
+# id → (moneda en que factura, riel de Blinka, cuenta nueva o None, código de banco, red USDC)
+RIELES_DEMO = {
+    "PRV-001": ("USD", "swift", None, "COLOCOBM", None),
+    "PRV-002": ("USD", "usdc", None, None, "base"),
+    "PRV-003": ("USD", "swift", None, "BCHICLRM", None),
+    "PRV-004": ("USD", "usdc", None, None, "polygon"),
+    "PRV-005": ("COP", "bre_b", "@DATOSVALLE2201", None, None),
+    "PRV-006": ("MXN", "spei", clabe("07218000987654321"), None, None),
+    "PRV-007": ("CLP", "local_cl", None, None, None),
+    "PRV-008": ("PEN", "local_pe", "00219401234567809012", None, None),
+    "PRV-009": ("USD", "ach", None, "123456780", None),  # ABA ficticio con dígito de control válido
+    "PRV-010": ("USD", "wire", None, "123456780", None),
+    "PRV-011": ("USD", "usd_local", None, None, None),
+    "PRV-012": ("USD", "usdc", None, None, "solana"),
+}
+for _id, (_mon, _riel, _cuenta, _, _) in RIELES_DEMO.items():  # las facturas nuevas muestran la cuenta del riel
+    if _cuenta and _id in gf.PROV:
+        gf.PROV[_id] = dict(gf.PROV[_id], cuenta=_cuenta)
+
+
+def local(usd: float, moneda: str) -> float:
+    """Monto en USD llevado a la moneda del proveedor; COP y CLP sin decimales."""
+    if moneda == "USD":
+        return round(usd, 2)
+    v = usd * TASAS[moneda]
+    return round(v) if moneda in ("COP", "CLP") else round(v, 2)
+
+
+def moneda_de(prov_id: str) -> str:
+    return RIELES_DEMO.get(prov_id, ("USD",))[0]
 
 
 def mandato_demo(presupuesto: float) -> dict:
     m = json.loads((RAIZ / "data" / "mandato.json").read_text(encoding="utf-8"))
     m["version"] = "2026-10-17-demo"
     m["limites"]["presupuesto_periodo"]["monto"] = presupuesto
+    m["tasas_referencia"] = TASAS
     carga_m = carga.mandato()
-    for p in carga_m["proveedores_permitidos"]:
-        if p["id"] in NUEVOS:
-            m["proveedores_permitidos"].append(p | ({"billetera_usdc": billetera(p["id"])} if p["acepta_usdc"] else {}))
-    m["acuerdos"] += [dict(id=a, proveedor_id=p, concepto=c, monto=v, moneda="USD", vigente_hasta="2026-12-31")
-                      for a, p, c, v in ACUERDOS]
+    m["proveedores_permitidos"] += [p for p in carga_m["proveedores_permitidos"] if p["id"] in NUEVOS]
+    for p in m["proveedores_permitidos"]:
+        moneda, riel, cuenta, codigo, red = RIELES_DEMO[p["id"]]
+        p |= dict(moneda=moneda, riel=riel) | ({"cuenta": cuenta} if cuenta else {}) | ({"codigo_banco": codigo} if codigo else {})
+        if riel == "usdc":
+            p |= dict(acepta_usdc=True, red_usdc=red, billetera_usdc=billetera(p["id"], red))
+        elif p.get("acepta_usdc") and not p.get("billetera_usdc"):
+            p["billetera_usdc"] = billetera(p["id"])
+    m["acuerdos"] += [dict(id=a, proveedor_id=p, concepto=c, monto=local(v, moneda_de(p)), moneda=moneda_de(p),
+                           vigente_hasta="2026-12-31") for a, p, c, v in ACUERDOS]
     Mandato.model_validate(m)
     return m
 
@@ -93,7 +151,7 @@ def extras() -> list[dict]:
         jev = {}
         if i in con_oc:
             ref, prov, concepto, v = con_oc[i]
-            monto = round(v * rnd.uniform(0.985, 1.0), 2)
+            monto = round(v * rnd.uniform(0.985, 1.0), 2)  # en USD; abajo pasa a la moneda del proveedor
         elif tipo == "proveedor_desconocido":
             prov = rnd.choice(list(carga.DESCONOCIDOS))
         elif tipo == "monto_oc":
@@ -123,10 +181,12 @@ def extras() -> list[dict]:
             numero = f"{carga.MAESTRO[prov][3]}{siguiente[prov]:04d}" if prov != "PRV-004" else f"CR-{siguiente[prov]:03d}"
             siguiente[prov] += 1
             lineas = [(concepto, monto)] if ref else carga.conceptos(rnd, gf.PROV[prov]["categoria"], monto)
-            if tipo == "moneda":
-                extra |= dict(moneda=rnd.choice(["COP", "MXN"]))
-                factor = 4000 if extra["moneda"] == "COP" else 18
-                lineas = [(t, round(v * factor)) for t, v in lineas]
+            propia = moneda_de(prov)
+            if tipo == "moneda":  # factura en una moneda distinta a la que tiene pactada el proveedor
+                extra |= dict(moneda=rnd.choice(["COP", "MXN"]) if propia == "USD" else "USD")
+            else:
+                extra |= dict(moneda=propia)
+            lineas = [(t, local(v, extra["moneda"])) for t, v in lineas]
             c = gf.caso(f"D{n:03d}_{prov.lower()}{carga.EXT[canal]}", prov, numero, emision.isoformat(), lineas,
                         "NO_PAGAR" if tipo != "legit" else "CUALQUIERA", referencia=ref,
                         vencimiento=emision + timedelta(days=30), jev=jev, **extra)
@@ -145,7 +205,12 @@ def entrada_extra(k: dict) -> dict:
     return dict(archivo=c["archivo"], canal=c["canal"], remitente=gf.remitente(c), origen="operacion",
                 esperado="CUALQUIERA" if tipo == "legit" else "NO_PAGAR", regla_esperada=REGLA.get(tipo),
                 trampa=tipo != "legit", tipo_trampa=None if tipo == "legit" else tipo, descripcion=DESCRIPCION[tipo],
-                extraccion_esperada=gf.extraccion(c), jev_esperado=gf.jev(c))
+                extraccion_esperada=normalizada(gf.extraccion(c)), jev_esperado=gf.jev(c))
+
+
+def normalizada(e: dict) -> dict:
+    """Como la deja el extractor real: la cuenta solo con letras y dígitos ("@DATOSVALLE2201" → "DATOSVALLE2201")."""
+    return e | {"cuenta_destino": re.sub(r"[^A-Za-z0-9]", "", e["cuenta_destino"])} if e.get("cuenta_destino") else e
 
 
 def simular(casos: list[dict], m: Mandato, historial: list[EntradaHistorial] | None = None) -> list[tuple[str, str | None]]:
@@ -228,8 +293,10 @@ def main():
 
     # presupuesto: lo que paga el set más USD 20.000 de margen, para que el jurado pueda probar con sus facturas
     # (el control de presupuesto se ve en el set exacto de 24, F13, y en las pruebas)
-    sin_tope = simular(casos, Mandato.model_validate(mandato_demo(10**9)))
-    pagado = sum(float(c["extraccion_esperada"]["monto_total"]) for c, (d, _) in zip(casos, sin_tope) if d == "PAGAR")
+    m_sin_tope = Mandato.model_validate(mandato_demo(10**9))
+    sin_tope = simular(casos, m_sin_tope)
+    pagado = float(sum(mod_mandato.a_base(Decimal(c["extraccion_esperada"]["monto_total"]), c["extraccion_esperada"]["moneda"], m_sin_tope)
+                       for c, (d, _) in zip(casos, sin_tope) if d == "PAGAR"))
     presupuesto = math.ceil((pagado + 20000) / 1000) * 1000
     m = mandato_demo(presupuesto)
     resultado = simular(casos, Mandato.model_validate(m))

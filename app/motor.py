@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from datetime import date
 
-from app import config, x402
+from app import config, rieles
 from app.mandato import acuerdo_por, hash_de, proveedor_por
 from app.modelos import (
     Acuerdo, Decision, Documento, EntradaHistorial, Extraccion, Mandato, Proveedor, RespuestasJEV, ResultadoRegla,
@@ -78,7 +78,7 @@ def decidir(doc: Documento, mandato: Mandato, *, extraer: Callable[[Documento], 
         factura_hash=doc.hash, archivo=doc.nombre, canal=doc.canal, proveedor_id=proveedor.id if proveedor else None,
         extraccion=extraccion, consistente=consistente, reglas=reglas, jev=jev, decision=decision, regla_decisiva=decisiva,
         explicacion=explicar(decision, decisiva, reglas, extraccion, proveedor), fecha_pago_programada=fecha_pago,
-        riel_sugerido=x402.riel(proveedor) if decision == "PAGAR" else None,
+        riel_sugerido=rieles.etiqueta(proveedor) if decision == "PAGAR" else None,
         mandato_hash=hash_de(mandato), costo_usd=costo_extraccion + (jev.costo_usd if jev else 0.0),
         latencia_ms=int((time.perf_counter() - t0) * 1000),
     )

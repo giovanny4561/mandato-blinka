@@ -95,21 +95,26 @@
   </details>
 </section>
 
-{% if orden %}
+{% if pago %}
 <section aria-labelledby="t-x402">
   <div class="seccion-cabeza">
-    <h2 id="t-x402">Orden de pago x402</h2>
-    <span class="estado estado--escalar">Simulada: sin firmar y sin enviar</span>
+    <h2 id="t-x402">Orden de pago por {{ pago.riel }}</h2>
+    <span class="estado estado--escalar">Simulada: sin enviar</span>
   </div>
   <div class="tarjeta x402">
     <dl class="ficha ficha--plana">
-      <div><dt>Monto</dt><dd>{{ d.extraccion.monto_total|monto('USDC') }}</dd></div>
-      <div><dt>Red</dt><dd>Base Sepolia (pruebas)</dd></div>
-      <div class="ficha__doble"><dt>Destino</dt><dd><code>{{ orden.accepted.payTo }}</code></dd></div>
+      <div><dt>Monto</dt><dd>{{ d.extraccion.monto_total|monto(pago.moneda_pago) }}</dd></div>
+      <div><dt>Riel de Blinka</dt><dd>{{ d.riel_sugerido or pago.riel }}</dd></div>
+      <div class="ficha__doble"><dt>Beneficiario</dt><dd>{% for k, v in pago.beneficiario.items() %}{{ k|replace('_', ' ') }}: <code>{{ v }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</dd></div>
     </dl>
-    <p class="tenue">El mandato dijo PAGAR y {{ d.extraccion.proveedor_nombre }} acepta USDC, así que Mandato arma la orden en el formato v2 de x402. Una billetera con permiso del mandato la firmaría (EIP-3009) y un facilitador la liquidaría. Aquí se detiene: el reto excluye mover dinero. El nonce sale del sello de esta decisión, así que la misma orden no se puede cobrar dos veces.</p>
-    <details><summary>Ver el JSON</summary><pre>{{ orden|tojson(indent=1) }}</pre></details>
-    <a class="enlace" href="/api/decisiones/{{ d.id }}/x402">/api/decisiones/{{ d.id }}/x402</a>
+    {% if orden %}
+    <p class="tenue">{{ d.extraccion.proveedor_nombre }} cobra en USDC sobre Base, así que la orden sale en el formato v2 de x402 (Base Sepolia). Una billetera con permiso del mandato la firmaría (EIP-3009) y un facilitador la liquidaría. El nonce sale del sello de esta decisión: la misma orden no se puede cobrar dos veces.</p>
+    <details><summary>Ver el JSON de x402</summary><pre>{{ orden|tojson(indent=1) }}</pre></details>
+    {% else %}
+    <p class="tenue">El mandato dijo PAGAR, así que Mandato arma la orden por el riel de Blinka que tiene {{ d.extraccion.proveedor_nombre }} en el maestro, con su cuenta verificada (nunca la de la factura). Aquí se detiene: el reto excluye mover dinero.</p>
+    <details><summary>Ver el JSON</summary><pre>{{ pago|tojson(indent=1) }}</pre></details>
+    {% endif %}
+    <a class="enlace" href="/api/decisiones/{{ d.id }}/orden">/api/decisiones/{{ d.id }}/orden</a>
   </div>
 </section>
 {% endif %}

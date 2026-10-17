@@ -39,15 +39,23 @@
   <div class="seccion-cabeza"><h2 id="t-prov">Beneficiarios permitidos</h2><span class="tenue">{{ mandato.proveedores_permitidos|length }}</span></div>
   <div class="tabla-envoltura" tabindex="0" role="region" aria-labelledby="t-prov">
   <table>
-    <thead><tr><th scope="col">Beneficiario</th><th scope="col">Identificación</th><th scope="col">País</th><th scope="col">Banco y cuenta</th><th scope="col">Dominio de correo</th></tr></thead>
+    <thead><tr><th scope="col">Beneficiario</th><th scope="col">Identificación</th><th scope="col">País</th><th scope="col">Riel de Blinka</th><th scope="col">Cuenta</th><th scope="col">Dominio de correo</th></tr></thead>
     <tbody>
     {% for p in mandato.proveedores_permitidos %}
-    <tr><td><strong>{{ p.nombre }}</strong><br><span class="tenue">{{ p.id }}</span></td><td>{{ p.tax_id }}</td><td>{{ p.pais }}</td><td>{{ p.banco }} · {{ p.cuenta|enmascarar }}</td><td>{{ p.dominio_correo or '—' }}</td></tr>
+    <tr><td><strong>{{ p.nombre }}</strong><br><span class="tenue">{{ p.id }}</span></td><td>{{ p.tax_id }}</td><td>{{ p.pais }}</td><td>{{ p|riel }}</td><td>{% if p.riel == 'usdc' %}<code>{{ p.billetera_usdc[:6] }}…{{ p.billetera_usdc[-4:] }}</code>{% else %}{{ p.banco }} · {{ p.cuenta|enmascarar }}{% if p.codigo_banco %} · {{ p.codigo_banco }}{% endif %}{% endif %}</td><td>{{ p.dominio_correo or '—' }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
   </div>
 </section>
+
+{% if mandato.tasas_referencia %}
+<section aria-labelledby="t-tasas">
+  <div class="seccion-cabeza"><h2 id="t-tasas">Tasas de referencia</h2><span class="tenue">por 1 {{ base }}</span></div>
+  <p class="tenue">Con ellas el tope, el umbral, el presupuesto y el fraccionamiento se miden en {{ base }} aunque el proveedor facture en su moneda. La tasa real del pago la pone Blinka al convertir.</p>
+  <p>{% for moneda, t in mandato.tasas_referencia.items() %}<span class="pastilla">{{ moneda }} {{ t|num(2) }}</span> {% endfor %}</p>
+</section>
+{% endif %}
 
 <section aria-labelledby="t-acuerdos">
   <div class="seccion-cabeza"><h2 id="t-acuerdos">Acuerdos vigentes</h2><span class="tenue">{{ mandato.acuerdos|length }}</span></div>

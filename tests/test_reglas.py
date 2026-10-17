@@ -76,7 +76,7 @@ def test_r02_cuenta_distinta_frena_con_cuentas_enmascaradas(m):
 def test_r03_moneda_distinta_escala_y_omite_reglas_de_monto(m):
     r = ev(m, hacer_extraccion(moneda="COP", monto_total=Decimal("12800000"), referencia_acuerdo=None))
     assert r["R03"].veredicto == "ESCALAR" and "COP" in r["R03"].mensaje
-    assert all(r[k].veredicto == "OK" and r[k].evidencia == {"omitida": "moneda distinta"} for k in DE_MONTO)
+    assert all(r[k].veredicto == "OK" and r[k].evidencia == {"omitida": "moneda sin tasa de referencia"} for k in DE_MONTO)
 
 
 def test_r04_duplicado_por_numero_o_por_hash_frena(m):

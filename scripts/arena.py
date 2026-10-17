@@ -20,7 +20,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
-from app import motor  # noqa: E402
+from app import mandato as mod_mandato, motor  # noqa: E402
 from app.modelos import Extraccion, Mandato, RespuestasJEV  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("generar_demo", RAIZ / "scripts" / "generar_demo.py")
@@ -33,6 +33,9 @@ def mutaciones(m: Mandato, pagadas: dict[str, list[str]]) -> dict:
     """nombre → función(datos de la extracción, caso, rnd) que devuelve (datos, canal, remitente) o None si no aplica."""
     lim = m.limites
     prov_por_tax = {p.tax_id: p for p in m.proveedores_permitidos}
+
+    def en_moneda(usd: int, d: dict) -> str:  # el ataque de monto se expresa en la moneda de la factura
+        return str(Decimal(usd) * mod_mandato.tasa(d["moneda"], m))
 
     def prov(d):
         return prov_por_tax.get(d["proveedor_tax_id"])
@@ -47,10 +50,12 @@ def mutaciones(m: Mandato, pagadas: dict[str, list[str]]) -> dict:
         "reemision_sufijo": lambda d, c, r: (d | {"numero_factura": r.choice(pagadas[prov(d).id]) + r.choice(["-B", "-REV1", " BIS"])},
                                              c["canal"], c.get("remitente"))
         if prov(d) and pagadas.get(prov(d).id) and all(len(n) > 6 for n in pagadas[prov(d).id]) else None,
-        "otra_moneda": lambda d, c, r: (d | {"moneda": r.choice(["COP", "MXN", "EUR"])}, c["canal"], c.get("remitente")),
-        "sobre_tope": lambda d, c, r: (d | {"monto_total": str(lim.tope_por_pago + r.randint(1, 20000))}, c["canal"], c.get("remitente")),
-        "sobre_umbral": lambda d, c, r: (d | {"monto_total": str(lim.umbral_aprobacion_humana + r.randint(1, int(lim.tope_por_pago - lim.umbral_aprobacion_humana) - 1))},
-                                         c["canal"], c.get("remitente")),
+        "otra_moneda": lambda d, c, r: (d | {"moneda": r.choice([x for x in ("USD", "COP", "MXN", "EUR") if x != d["moneda"]])},
+                                        c["canal"], c.get("remitente")),
+        "sobre_tope": lambda d, c, r: (d | {"monto_total": en_moneda(int(lim.tope_por_pago) + r.randint(1, 20000), d)},
+                                       c["canal"], c.get("remitente")),
+        "sobre_umbral": lambda d, c, r: (d | {"monto_total": en_moneda(int(lim.umbral_aprobacion_humana) + r.randint(
+            1, int(lim.tope_por_pago - lim.umbral_aprobacion_humana) - 1), d)}, c["canal"], c.get("remitente")),
         "fecha_futura": lambda d, c, r: (d | {"fecha_emision": (HOY + timedelta(days=r.randint(3, 40))).isoformat(),
                                               "fecha_vencimiento": (HOY + timedelta(days=r.randint(45, 90))).isoformat()},
                                          c["canal"], c.get("remitente")),

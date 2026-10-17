@@ -37,7 +37,9 @@
       "banco": "Bancolombia",
       "cuenta": "03100190193",
       "acepta_usdc": false,
-      "dominio_correo": "nubeandina.co"
+      "dominio_correo": "nubeandina.co",
+      "riel": "swift",
+      "codigo_banco": "COLOCOBM"
     },
     {
       "id": "PRV-002",
@@ -49,7 +51,9 @@
       "cuenta": "202411778821",
       "acepta_usdc": true,
       "billetera_usdc": "0x4f05b711c54a7f406c099bad45cc1893dd5dfba5",
-      "dominio_correo": "pixelforge.io"
+      "dominio_correo": "pixelforge.io",
+      "riel": "usdc",
+      "red_usdc": "base"
     },
     {
       "id": "PRV-003",
@@ -60,7 +64,9 @@
       "banco": "Banco de Chile",
       "cuenta": "00123456789",
       "acepta_usdc": false,
-      "dominio_correo": "logisticasur.cl"
+      "dominio_correo": "logisticasur.cl",
+      "riel": "swift",
+      "codigo_banco": "BCHICLRM"
     },
     {
       "id": "PRV-004",
@@ -72,51 +78,57 @@
       "cuenta": "012180001234567890",
       "acepta_usdc": true,
       "billetera_usdc": "0x51ca08facab60690414bf6eca2e2902c2bdcaf3a",
-      "dominio_correo": null
+      "dominio_correo": null,
+      "riel": "usdc",
+      "red_usdc": "polygon"
     },
     {
       "id": "PRV-005",
       "nombre": "Datos del Valle SAS",
       "tax_id": "901765432-1",
       "pais": "CO",
-      "moneda": "USD",
+      "moneda": "COP",
       "banco": "Banco de Bogotá",
-      "cuenta": "0045123987",
+      "cuenta": "@DATOSVALLE2201",
       "acepta_usdc": false,
-      "dominio_correo": "datosdelvalle.co"
+      "dominio_correo": "datosdelvalle.co",
+      "riel": "bre_b"
     },
     {
       "id": "PRV-006",
       "nombre": "Impresos Quetzal SA de CV",
       "tax_id": "IQU1203157K2",
       "pais": "MX",
-      "moneda": "USD",
+      "moneda": "MXN",
       "banco": "Banorte",
-      "cuenta": "072180009876543210",
+      "cuenta": "072180009876543213",
       "acepta_usdc": false,
-      "dominio_correo": "impresosquetzal.mx"
+      "dominio_correo": "impresosquetzal.mx",
+      "riel": "spei"
     },
     {
       "id": "PRV-007",
       "nombre": "Andes Cowork SpA",
       "tax_id": "77123456-K",
       "pais": "CL",
-      "moneda": "USD",
+      "moneda": "CLP",
       "banco": "Banco Santander Chile",
       "cuenta": "0071234560",
       "acepta_usdc": false,
-      "dominio_correo": "andescowork.cl"
+      "dominio_correo": "andescowork.cl",
+      "riel": "local_cl"
     },
     {
       "id": "PRV-008",
       "nombre": "Inka Datos SAC",
       "tax_id": "20601234567",
       "pais": "PE",
-      "moneda": "USD",
+      "moneda": "PEN",
       "banco": "BCP",
-      "cuenta": "19412345678090",
+      "cuenta": "00219401234567809012",
       "acepta_usdc": false,
-      "dominio_correo": "inkadatos.pe"
+      "dominio_correo": "inkadatos.pe",
+      "riel": "local_pe"
     },
     {
       "id": "PRV-009",
@@ -128,6 +140,8 @@
       "cuenta": "483920175",
       "acepta_usdc": true,
       "dominio_correo": "harborlanelegal.com",
+      "riel": "ach",
+      "codigo_banco": "123456780",
       "billetera_usdc": "0x6f1e08fb322564f1a34ef55a3839f5dc2213a6c7"
     },
     {
@@ -140,6 +154,8 @@
       "cuenta": "3820019475",
       "acepta_usdc": true,
       "dominio_correo": "brightpathads.com",
+      "riel": "wire",
+      "codigo_banco": "123456780",
       "billetera_usdc": "0x5a343fd539091dd1aad1e7e137a776fa675d9574"
     },
     {
@@ -151,7 +167,8 @@
       "banco": "Interbank",
       "cuenta": "2003001234567",
       "acepta_usdc": false,
-      "dominio_correo": "transpacifico.pe"
+      "dominio_correo": "transpacifico.pe",
+      "riel": "usd_local"
     },
     {
       "id": "PRV-012",
@@ -163,7 +180,9 @@
       "cuenta": "91200345678",
       "acepta_usdc": true,
       "dominio_correo": null,
-      "billetera_usdc": "0x084b189f4682bb34f05fc6bfa0734c1e79a8bdcc"
+      "riel": "usdc",
+      "red_usdc": "solana",
+      "billetera_usdc": "ZNgGWe7epXsXbXSeoMtESacBLxY8SFEZTLTkopFLegB"
     }
   ],
   "acuerdos": [
@@ -211,32 +230,32 @@
       "id": "OC-2026-042",
       "proveedor_id": "PRV-005",
       "concepto": "Licencias de analítica octubre",
-      "monto": 4200,
-      "moneda": "USD",
+      "monto": 17220000,
+      "moneda": "COP",
       "vigente_hasta": "2026-12-31"
     },
     {
       "id": "OC-2026-043",
       "proveedor_id": "PRV-006",
       "concepto": "Material POP campaña Q4",
-      "monto": 3600,
-      "moneda": "USD",
+      "monto": 66600.0,
+      "moneda": "MXN",
       "vigente_hasta": "2026-12-31"
     },
     {
       "id": "OC-2026-044",
       "proveedor_id": "PRV-007",
       "concepto": "Arriendo de puestos cowork octubre",
-      "monto": 3900,
-      "moneda": "USD",
+      "monto": 3705000,
+      "moneda": "CLP",
       "vigente_hasta": "2026-12-31"
     },
     {
       "id": "OC-2026-045",
       "proveedor_id": "PRV-008",
       "concepto": "Migración de data warehouse, fase 1",
-      "monto": 4700,
-      "moneda": "USD",
+      "monto": 17625.0,
+      "moneda": "PEN",
       "vigente_hasta": "2026-12-31"
     },
     {
@@ -271,5 +290,17 @@
       "moneda": "USD",
       "vigente_hasta": "2026-12-31"
     }
-  ]
+  ],
+  "tasas_referencia": {
+    "COP": 4100,
+    "MXN": 18.5,
+    "CLP": 950,
+    "PEN": 3.75,
+    "BRL": 5.4,
+    "EUR": 0.92,
+    "ARS": 1400,
+    "BOB": 6.96,
+    "CRC": 505,
+    "ZAR": 17.8
+  }
 }

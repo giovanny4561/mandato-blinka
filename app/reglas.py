@@ -10,7 +10,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
-from app.mandato import acuerdo_por, alfanumerico, proveedor_por
+from app.mandato import a_base, acuerdo_por, alfanumerico, proveedor_por, tasa
 from app.modelos import (
     Acuerdo, Conciliacion, EntradaHistorial, Extraccion, Limites, Mandato, Proveedor, RespuestasJEV,
     ResultadoRegla, UmbralesJEV,
@@ -182,9 +182,11 @@ def _r08(e: Extraccion, lim: Limites) -> ResultadoRegla:
 
 
 def _r09(e: Extraccion, c: Conciliacion, prov: Proveedor, acuerdo: Acuerdo | None,
-         historial: list[EntradaHistorial] = ()) -> ResultadoRegla:
+         historial: list[EntradaHistorial] = (), tasa: Decimal = Decimal(1)) -> ResultadoRegla:
+    """Compara con el acuerdo en su propia moneda; el monto desde el que se exige acuerdo y la tolerancia absoluta están
+    en moneda base y se llevan a la de la factura con `tasa`."""
     if not e.referencia_acuerdo:
-        if e.monto_total >= c.exigir_acuerdo_desde:
+        if e.monto_total >= c.exigir_acuerdo_desde * tasa:
             return _r("R09", "ESCALAR",
                       f"{e.moneda} {monto(e.monto_total)} alcanza el monto desde el que se exige acuerdo "
                       f"({monto(c.exigir_acuerdo_desde)}) y la factura no referencia ninguno",
@@ -195,7 +197,7 @@ def _r09(e: Extraccion, c: Conciliacion, prov: Proveedor, acuerdo: Acuerdo | Non
                   f"Acuerdo no encontrado: la factura cita {e.referencia_acuerdo}, que no existe, no está vigente o no es de {prov.nombre}",
                   referencia=e.referencia_acuerdo)
     diferencia = abs(e.monto_total - acuerdo.monto)
-    tolerancia = max(c.tolerancia_abs, acuerdo.monto * c.tolerancia_pct / 100)
+    tolerancia = max(c.tolerancia_abs * tasa, acuerdo.monto * c.tolerancia_pct / 100)
     pct = float(round(diferencia / acuerdo.monto * 100, 1)) if acuerdo.monto else None
     ev = dict(acuerdo=acuerdo.id, acordado=acuerdo.monto, facturado=e.monto_total, diferencia=diferencia,
               diferencia_pct=pct, tolerancia=tolerancia)
@@ -358,12 +360,18 @@ def evaluar(extraccion: Extraccion, mandato: Mandato, historial: list[EntradaHis
     r00 = _r00(e)
     prov = proveedor_por(e, m) if r00.veredicto == "OK" else None
     acuerdo = acuerdo_por(e.referencia_acuerdo, prov.id, m, hoy) if prov else None
+    base = m.empresa.moneda_base
+    t = tasa(e.moneda, m)
     if e.monto_total is None:
         sin_monto = "sin monto"
-    elif e.moneda != m.empresa.moneda_base:
-        sin_monto = "moneda distinta"
+    elif t is None:
+        sin_monto = "moneda sin tasa de referencia"
     else:
         sin_monto = None
+    # Tope, presupuesto, umbral y fraccionamiento se miden en moneda base: factura e historial pasan por la tasa del mandato.
+    eb = e.model_copy(update={"monto_total": a_base(e.monto_total, e.moneda, m), "moneda": base}) if sin_monto is None else e
+    hb = [h.model_copy(update={"monto_total": a_base(h.monto_total, h.moneda, m), "moneda": base})
+          if h.moneda != base and tasa(h.moneda, m) is not None else h for h in historial]
 
     def con_prov(rid, f):
         return f() if prov else _r(rid, omitida="sin proveedor")
@@ -371,18 +379,18 @@ def evaluar(extraccion: Extraccion, mandato: Mandato, historial: list[EntradaHis
     def con_monto(rid, f):
         return f() if sin_monto is None else _r(rid, omitida=sin_monto)
 
-    return [
+    resultados = [
         r00,
         _r01(e, prov) if r00.veredicto == "OK" else _r("R01", omitida="sin datos"),
         con_prov("R02", lambda: _r02(e, prov)),
         con_prov("R03", lambda: _r03(e, prov)),
         _r04(e, prov, historial, factura_hash),
         con_prov("R05", lambda: _r05(e, prov, historial, lim.ventana_casi_duplicado_dias)),
-        con_monto("R06", lambda: _r06(e, lim)),
-        con_prov("R07", lambda: con_monto("R07", lambda: _r07(e, lim, historial, hoy))),
-        con_monto("R08", lambda: _r08(e, lim)),
-        con_prov("R09", lambda: _r09(e, m.conciliacion, prov, acuerdo, historial)),
-        con_prov("R10", lambda: con_monto("R10", lambda: _r10(e, lim, prov, historial, hoy))),
+        con_monto("R06", lambda: _r06(eb, lim)),
+        con_prov("R07", lambda: con_monto("R07", lambda: _r07(eb, lim, hb, hoy))),
+        con_monto("R08", lambda: _r08(eb, lim)),
+        con_prov("R09", lambda: _r09(e, m.conciliacion, prov, acuerdo, historial, t or Decimal(1))),
+        con_prov("R10", lambda: con_monto("R10", lambda: _r10(eb, lim, prov, hb, hoy))),
         _r11(e, hoy),
         _r12(consistente, e, texto),
         con_prov("R13", lambda: _r13(canal, remitente, prov)),
@@ -391,3 +399,10 @@ def evaluar(extraccion: Extraccion, mandato: Mandato, historial: list[EntradaHis
         _j03(jev, m.umbrales_jev),
         _j04(jev, m.umbrales_jev, e),
     ]
+    if sin_monto is None and e.moneda != base:
+        nota = (f" (factura por {e.moneda} {monto(e.monto_total)}, a {monto(t)} {e.moneda} por {base} según la tasa de "
+                f"referencia del mandato)")
+        for r in resultados:
+            if r.regla_id in ("R06", "R07", "R08", "R10") and r.veredicto != "OK":
+                r.mensaje += nota
+    return resultados

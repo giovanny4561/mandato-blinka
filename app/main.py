@@ -25,7 +25,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, x402
+from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, rieles, x402
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -65,6 +65,7 @@ plantillas.env.filters["num"] = num_es
 plantillas.env.filters["monto"] = monto_html
 plantillas.env.filters["pct"] = lambda v: f"{num_es(v, 1)} %"
 plantillas.env.filters["hora"] = hora_local
+plantillas.env.filters["riel"] = lambda p: rieles.etiqueta(p)
 plantillas.env.filters["enmascarar"] = lambda v: f"****{str(v)[-4:]}" if v else "—"
 plantillas.env.filters["sin_veredicto"] = lambda t: re.sub(r"^(PAGAR|ESCALAR|FRENAR) · ", "", t or "")
 plantillas.env.globals["n_pendientes"] = lambda: len(registro.pendientes())
@@ -173,8 +174,8 @@ def sse(evento: dict) -> str:
 
 def consumido_mes(m: Mandato) -> float:
     hoy = config.hoy()
-    return float(sum(h.monto_total or 0 for h in registro.historial()
-                     if h.decision == "PAGAR" and h.moneda == m.empresa.moneda_base and h.ts[:7] == hoy.isoformat()[:7]))
+    return float(sum(mod_mandato.a_base(h.monto_total, h.moneda, m) or 0 for h in registro.historial()
+                     if h.decision == "PAGAR" and h.ts[:7] == hoy.isoformat()[:7]))
 
 
 # ---------- API ----------
@@ -243,10 +244,23 @@ def api_anclar(pin: str = Form(...)):
     return {k: v for k, v in a.items() if k != "ots_b64"}
 
 
+def proveedor_de(d):
+    # shortcut: usa el maestro del mandato vigente, no el de la versión con que se decidió; guardarlo si cambia seguido
+    return next((p for p in mod_mandato.cargar().proveedores_permitidos if p.id == d.proveedor_id), None)
+
+
 def orden_x402(d) -> dict | None:
-    # shortcut: usa la billetera del mandato vigente, no la de la versión con que se decidió; guardarla si el mandato cambia seguido
-    prov = next((p for p in mod_mandato.cargar().proveedores_permitidos if p.id == d.proveedor_id), None)
-    return x402.orden(d, prov)
+    return x402.orden(d, proveedor_de(d))
+
+
+@app.get("/api/decisiones/{id_}/orden", operation_id="orden_de_pago",
+         summary="Orden de pago SIMULADA por el riel de Blinka del proveedor (ACH, wire, SWIFT, SEPA, Bre-B, Pix, SPEI, CBU, USDC...)")
+def api_orden(id_: int):
+    d = registro.obtener(id_)
+    orden = rieles.orden(d, proveedor_de(d)) if d else None
+    if orden is None:
+        raise HTTPException(404, "esta decisión no tiene orden de pago: no es PAGAR o el proveedor no tiene riel en el mandato")
+    return orden
 
 
 @app.get("/api/decisiones/{id_}/x402", operation_id="orden_x402",
@@ -489,7 +503,8 @@ def detalle(request: Request, id_: int):
     d = registro.obtener(id_)
     if d is None:
         raise HTTPException(404, "decisión no encontrada")
-    return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_), orden=orden_x402(d))
+    return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_),
+                  pago=rieles.orden(d, proveedor_de(d)), orden=orden_x402(d))
 
 
 @app.get("/pendientes", response_class=HTMLResponse, include_in_schema=False)

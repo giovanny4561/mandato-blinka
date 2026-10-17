@@ -11,6 +11,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from app import rieles
+
 Veredicto = Literal["PAGAR", "ESCALAR", "FRENAR"]
 VeredictoRegla = Literal["OK", "ESCALAR", "FRENAR"]
 Canal = Literal["pdf", "imagen", "xml", "correo", "chat", "agente"]
@@ -71,8 +73,22 @@ class Proveedor(Estricto):
     banco: str
     cuenta: str
     acepta_usdc: bool = False
-    billetera_usdc: str | None = Field(None, pattern=r"^0x[0-9a-fA-F]{40}$")  # destino de una orden x402 (simulada)
+    billetera_usdc: str | None = None  # destino en USDC; con red "base", la orden sale en formato x402 (simulada)
     dominio_correo: str | None = None
+    riel: str | None = None  # riel de Blinka con que se le paga (app/rieles.py): ach, wire, swift, sepa, bre_b, pix, spei...
+    codigo_banco: str | None = None  # ABA, BIC, código de banco o de sucursal, según el riel
+    red_usdc: str | None = None  # base, ethereum, polygon, celo o solana
+
+    @model_validator(mode="after")
+    def _pagable_por_su_riel(self):
+        """Un maestro con una CLABE, un IBAN o un ABA mal escritos se rechaza al guardarlo, no al pagar."""
+        if self.riel:
+            if errores := rieles.problemas(self.riel, self.pais, self.moneda, self.cuenta, self.codigo_banco,
+                                           self.billetera_usdc, self.red_usdc):
+                raise ValueError(f"{self.id}: " + "; ".join(errores))
+        elif self.billetera_usdc and not rieles.billetera(self.billetera_usdc, self.red_usdc or "base"):
+            raise ValueError(f"{self.id}: la billetera USDC no es una dirección válida")
+        return self
 
 
 class Acuerdo(Estricto):
@@ -92,13 +108,21 @@ class Mandato(Estricto):
     umbrales_jev: UmbralesJEV = UmbralesJEV()
     proveedores_permitidos: list[Proveedor]
     acuerdos: list[Acuerdo] = []
+    # unidades de cada moneda por 1 de moneda_base; con ellas tope, umbral, presupuesto y fraccionamiento se miden en la
+    # moneda base. Es la tasa de referencia del mandato, no la del pago: esa la pone Blinka al convertir.
+    tasas_referencia: dict[str, Annotated[Decimal, Field(gt=0)]] = {}
 
     @model_validator(mode="after")
-    def _misma_moneda(self):
-        """Las reglas de monto comparan en moneda_base; un proveedor en otra moneda las dejaría sin efecto."""
-        otras = [p.id for p in self.proveedores_permitidos if p.moneda != self.empresa.moneda_base]
+    def _monedas_medibles(self):
+        """Sin tasa, las reglas de monto no podrían medir a un proveedor en otra moneda: el mandato se rechaza."""
+        medibles = {self.empresa.moneda_base} | set(self.tasas_referencia)
+        otras = [f"{p.id} ({p.moneda})" for p in self.proveedores_permitidos if p.moneda not in medibles]
         if otras:
-            raise ValueError(f"proveedores en moneda distinta a {self.empresa.moneda_base}: {otras}")
+            raise ValueError(f"proveedores en monedas sin tasa de referencia: {', '.join(otras)}")
+        moneda_de = {p.id: p.moneda for p in self.proveedores_permitidos}
+        cruzados = [a.id for a in self.acuerdos if a.proveedor_id in moneda_de and a.moneda != moneda_de[a.proveedor_id]]
+        if cruzados:
+            raise ValueError(f"acuerdos en una moneda distinta a la de su proveedor: {cruzados}")
         ids = {p.id for p in self.proveedores_permitidos}
         huerfanos = [a.id for a in self.acuerdos if a.proveedor_id not in ids]
         if huerfanos:

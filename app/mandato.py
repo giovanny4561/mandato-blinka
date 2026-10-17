@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from decimal import Decimal
 import json
 import re
 import unicodedata
@@ -21,6 +22,18 @@ def cargar(path: Path | None = None) -> Mandato:
 def guardar(m: Mandato, path: Path | None = None) -> None:
     texto = json.dumps(m.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n"
     (path or config.mandato_path()).write_text(texto, encoding="utf-8")
+
+
+def tasa(moneda: str | None, m: Mandato) -> Decimal | None:
+    """Unidades de `moneda` por 1 de la moneda base del mandato; None si el mandato no sabe medirla."""
+    if moneda == m.empresa.moneda_base:
+        return Decimal(1)
+    return m.tasas_referencia.get(moneda or "")
+
+
+def a_base(monto: Decimal | None, moneda: str | None, m: Mandato) -> Decimal | None:
+    t = tasa(moneda, m)
+    return None if monto is None or t is None else (Decimal(monto) / t).quantize(Decimal("0.01"))
 
 
 def hash_de(m: Mandato) -> str:
