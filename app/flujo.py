@@ -7,6 +7,7 @@ milisegundos, así que corre en el orden de llegada, bajo el mismo candado que u
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 import uuid
@@ -17,6 +18,8 @@ from app import mandato as mod_mandato
 from app.modelos import Decision, Documento
 
 PARALELO = 16
+# Tope global de lecturas simultáneas hacia los modelos: protege de 429 y del "presupuesto en vuelo" de OpenRouter.
+_lecturas = threading.BoundedSemaphore(int(os.getenv("LECTURAS_MAX", "32")))
 _trabajos: dict[str, "Trabajo"] = {}
 
 
@@ -70,12 +73,13 @@ def resumen(d: Decision, id_: int) -> dict:
 
 def preparar(doc: Documento, m, hoy):
     """Lo lento y paralelizable: dos lecturas + JEV. No toca el historial ni el candado."""
-    t0 = time.perf_counter()
-    extraccion, consistente, costo = extractor.extraer(doc, hoy)
-    prov = mod_mandato.proveedor_por(extraccion, m)
-    acuerdo = mod_mandato.acuerdo_por(extraccion.referencia_acuerdo, prov.id, m, hoy) if prov else None
-    jev = decisor.preguntar_factura(motor.estado_para_jev(doc, extraccion, acuerdo, prov, hoy))
-    return extraccion, consistente, costo, jev, time.perf_counter() - t0
+    with _lecturas:
+        t0 = time.perf_counter()
+        extraccion, consistente, costo = extractor.extraer(doc, hoy)
+        prov = mod_mandato.proveedor_por(extraccion, m)
+        acuerdo = mod_mandato.acuerdo_por(extraccion.referencia_acuerdo, prov.id, m, hoy) if prov else None
+        jev = decisor.preguntar_factura(motor.estado_para_jev(doc, extraccion, acuerdo, prov, hoy))
+        return extraccion, consistente, costo, jev, time.perf_counter() - t0
 
 
 def decidir_y_registrar(doc: Documento, m, hoy, preparado, candado: threading.Lock) -> tuple[Decision, int]:

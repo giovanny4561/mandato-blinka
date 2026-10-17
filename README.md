@@ -156,6 +156,21 @@ precio *batch*.
 
 ## Escalabilidad
 
+**Prueba de carga de cierre de mes (17-oct-2026, `carga/`):** 100 usuarios simultáneos subiendo facturas a
+`POST /api/procesar` contra Postgres, con llamadas reales a los modelos y freno de gasto en US$ 1.
+
+| Métrica | Resultado |
+|---|---|
+| Facturas decididas | 794 en 89 s (**535 por minuto**) |
+| Latencia de punta a punta | p50 10,4 s · p95 12,8 s · p99 15,0 s (incluye la cola del semáforo de 32 lecturas) |
+| Costo | US$ 1,00 (US$ 0,00126 por factura) |
+| Trampas que terminaron en PAGAR | 0 de ~120 |
+| Pagos fuera de reglas | 0 |
+| Errores | 2 de 796 (0,25 %): el shim de JEV devolvió JSON con texto sobrante (ya corregido) y una conexión cortada. Ambos fallaron cerrados: nada se registró ni se pagó |
+
+Las lecturas corren en paralelo con un tope global (`LECTURAS_MAX`, 32 por defecto) y las decisiones en orden
+bajo un candado de milisegundos. El techo lo ponen la latencia y los límites de tasa de los modelos, no el servidor.
+
 Cada factura es un trabajo independiente: la cadena cuarentena → reglas → registro no comparte estado
 salvo la base. Para cientos de usuarios simultáneos: Postgres (ya soportado), una cola de trabajos
 para la extracción, caché por hash y límites de tasa hacia los proveedores de modelos. Nada de eso

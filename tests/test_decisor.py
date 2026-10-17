@@ -200,3 +200,22 @@ def test_shim_llm_reintenta_json_invalido_una_vez(monkeypatch):
     with pytest.raises(RuntimeError):
         decisor.preguntar_factura(STATE)
     assert len(llamadas) == 2
+
+
+def test_shim_tolera_texto_sobrante_tras_el_json(monkeypatch):
+    import json as _json
+    from app import decisor as d
+    respuesta = {"is_invoice": {"type": "noul", "probability": 0.9}, "hidden_instructions": {"type": "noul", "probability": 0.1},
+                 "matches_agreement": {"type": "choice", "probabilities": {"matches": 1.0}},
+                 "payment_risk": {"type": "score", "score": 0.2, "confidence": 0.9},
+                 "expense_category": {"type": "choice", "probabilities": {"software": 1.0}}}
+    contenido = _json.dumps(respuesta) + '\n{"extra": true}'
+
+    class R:
+        status_code = 200
+        def json(self):
+            return {"choices": [{"message": {"content": contenido}}], "usage": {"cost": 0.0}}
+
+    monkeypatch.setattr(d, "_post", lambda url, headers, body: R())
+    r = d._llm({"document_text": "x"}, d.PREGUNTAS)
+    assert r.respuestas["is_invoice"].probabilidad == 0.9

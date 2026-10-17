@@ -195,7 +195,7 @@ def _llm(state: dict | str, preguntas: dict) -> RespuestasJEV:
         datos = r.json()
         try:
             contenido = datos["choices"][0]["message"]["content"].strip().removeprefix("```json").removesuffix("```")
-            crudo = json.loads(contenido)
+            crudo = json.JSONDecoder().raw_decode(contenido.strip())[0]  # tolera texto sobrante tras el objeto
             respuestas = {clave: _parsear_llm(crudo[clave], p) for clave, p in preguntas.items()}
             break
         except (KeyError, ValueError, TypeError, AttributeError) as e:
