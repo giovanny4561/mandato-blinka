@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "macros.html" import movimiento %}
+{% block titulo %}Decisiones · Mandato{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <h1>Decisiones</h1>
+  <p class="bajada">{{ decisiones|length }} registros. Nadie edita ni borra filas: una aprobación humana agrega otra que apunta a la escalada.</p>
+</div>
+{% if decisiones %}
+<ul class="movimientos">
+  {% for d in decisiones %}{{ movimiento(d, detalle=True) }}{% endfor %}
+</ul>
+{% else %}
+<p class="tenue">Sin decisiones todavía. <a class="enlace" href="/bandeja">Sube una factura</a>.</p>
+{% endif %}
+{% endblock %}

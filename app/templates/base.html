@@ -1,0 +1,44 @@
+{% from "macros.html" import icono %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block meta %}{% endblock %}
+  <title>{% block titulo %}Mandato{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..650&display=swap">
+  <link rel="stylesheet" href="/static/estilo.css">
+</head>
+<body>
+  <svg width="0" height="0" class="sprite" aria-hidden="true">
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9.5 16.5 4 11"/></symbol>
+    <symbol id="i-persona" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6"/></symbol>
+    <symbol id="i-alto" viewBox="0 0 24 24"><polygon points="8.2 3 15.8 3 21 8.2 21 15.8 15.8 21 8.2 21 3 15.8 3 8.2"/><line x1="9.2" y1="9.2" x2="14.8" y2="14.8"/><line x1="14.8" y1="9.2" x2="9.2" y2="14.8"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M12 3.2 19.5 6v5.6c0 4.4-3.1 8.1-7.5 9.2-4.4-1.1-7.5-4.8-7.5-9.2V6z"/><polyline points="8.8 12.2 11 14.4 15.4 10"/></symbol>
+    <symbol id="i-subir" viewBox="0 0 24 24"><path d="M12 15.5V4.5"/><polyline points="7.5 9 12 4.5 16.5 9"/><path d="M5 19.5h14"/></symbol>
+    <symbol id="i-flecha" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8.5 7 17 7 17 15.5"/></symbol>
+    <symbol id="i-documento" viewBox="0 0 24 24"><path d="M14 3.5H7a1.5 1.5 0 0 0-1.5 1.5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><polyline points="14 3.5 14 8 18.5 8"/><line x1="9" y1="12.5" x2="15" y2="12.5"/><line x1="9" y1="16" x2="13" y2="16"/></symbol>
+  </svg>
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <header class="barra">
+    <div class="barra__dentro">
+      <a class="marca" href="/" aria-label="Mandato, inicio"><span class="marca__punto" aria-hidden="true"></span>Mandato</a>
+      <nav class="nav" aria-label="Principal">
+        {% set actual = request.url.path %}
+        <a href="/" {% if actual == '/' %}aria-current="page"{% endif %}>Panel</a>
+        <a href="/decisiones" {% if actual.startswith('/decisiones') %}aria-current="page"{% endif %}>Decisiones</a>
+        <a href="/pendientes" {% if actual == '/pendientes' %}aria-current="page"{% endif %}>Pendientes{% if n_pendientes() %} <span class="contador">{{ n_pendientes() }}</span>{% endif %}</a>
+        <a href="/mandato" {% if actual == '/mandato' %}aria-current="page"{% endif %}>Mandato</a>
+      </nav>
+      <a class="boton boton--chico" href="/bandeja">{{ icono('subir') }}Subir factura</a>
+    </div>
+  </header>
+  <main id="contenido" class="contenido">
+    {% block contenido %}{% endblock %}
+  </main>
+  <footer class="pie">
+    <p>Mandato es un prototipo para el reto Blinka de la Hackathon 30X. Empresas, facturas y cuentas son simuladas; no se mueve dinero.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import icono %}
+{% block titulo %}Pendientes · Mandato{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <h1>Pendientes</h1>
+  <p class="bajada">El agente escaló estas facturas porque algo se sale del mandato. Si apruebas, se pagan; si rechazas, quedan frenadas. Tu acción entra al registro como una fila nueva.</p>
+</div>
+{% if pendientes %}
+<ul class="pendientes">
+{% for d in pendientes %}
+  <li class="tarjeta pendiente" id="p-{{ d.id }}">
+    <div class="pendiente__cabeza">
+      <div>
+        <p class="pendiente__titulo">{{ d.extraccion.proveedor_nombre or 'Documento sin proveedor legible' }} <span class="mov__num">{{ d.extraccion.numero_factura or '' }}</span></p>
+        <p class="tenue">{{ d.regla_decisiva }} · {{ d.archivo }} · <a class="enlace" href="/decisiones/{{ d.id }}">ver detalle</a></p>
+      </div>
+      <p class="pendiente__monto">{{ d.extraccion.monto_total|monto(d.extraccion.moneda) }}</p>
+    </div>
+    <p class="pendiente__por-que">{{ d.explicacion|sin_veredicto }}</p>
+    <form class="pendiente__form" method="post" action="/pendientes/{{ d.id }}/resolver">
+      <div class="campo campo--crece">
+        <label for="nota-{{ d.id }}">Nota para el registro</label>
+        <input id="nota-{{ d.id }}" name="nota" maxlength="300" placeholder="Por qué apruebas o rechazas">
+      </div>
+      <div class="campo campo--pin">
+        <label for="pin-{{ d.id }}">PIN</label>
+        <input id="pin-{{ d.id }}" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
+      </div>
+      <div class="acciones">
+        <button class="boton" name="accion" value="aprobar">Aprobar y pagar</button>
+        <button class="boton boton--peligro" name="accion" value="rechazar">Rechazar</button>
+      </div>
+    </form>
+  </li>
+{% endfor %}
+</ul>
+{% else %}
+<section class="vacio-estado">
+  {{ icono('check', 'vacio-estado__icono') }}
+  <h2>Nada por aprobar</h2>
+  <p>Cuando una factura supere el umbral humano, no cuadre con lo acordado o el presupuesto no alcance, aparecerá aquí.</p>
+</section>
+{% endif %}
+{% endblock %}

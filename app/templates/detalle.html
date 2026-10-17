@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "macros.html" import icono, estado %}
+{% block titulo %}{{ d.extraccion.proveedor_nombre or d.archivo }} · Mandato{% endblock %}
+{% block contenido %}
+{% set e = d.extraccion %}
+<div class="encabezado encabezado--detalle">
+  <div>
+    <h1>{{ e.proveedor_nombre or 'Documento sin proveedor legible' }}</h1>
+    <p class="bajada">{{ e.numero_factura or 'Sin número' }} · {{ d.archivo }} · llegó por {{ {'pdf': 'PDF', 'imagen': 'imagen', 'correo': 'correo', 'chat': 'chat', 'agente': 'agente'}[d.canal] }} · {{ d.ts|hora }}</p>
+  </div>
+  <p class="detalle__monto">{{ e.monto_total|monto(e.moneda) }}</p>
+</div>
+
+<section class="veredicto veredicto--{{ d.decision|lower }}" aria-labelledby="t-por-que">
+  {{ estado(d) }}
+  <h2 id="t-por-que" class="veredicto__titulo">Por qué</h2>
+  <p class="veredicto__texto">{{ d.explicacion|sin_veredicto }}</p>
+  <p class="veredicto__meta">Decidido por {{ 'el agente' if d.decidido_por == 'agente' else 'una persona' }}{% if d.referencia_a %}, resuelve la escalada <a class="enlace" href="/decisiones/{{ d.referencia_a }}">#{{ d.referencia_a }}</a>{% endif %} · mandato <code>{{ d.mandato_hash }}</code> · {{ d.latencia_ms|num(0) }} ms · US$ {{ d.costo_usd|num(4) }}</p>
+  {% if d.decision == 'ESCALAR' and d.decidido_por == 'agente' and not acciones %}
+  <a class="boton boton--chico" href="/pendientes#p-{{ d.id }}">Resolver en pendientes</a>
+  {% endif %}
+  {% for h in acciones %}
+  <p class="veredicto__accion">{{ estado(h) }} · {{ h.ts|hora }} · Nota: {{ h.nota or 'sin nota' }} · <a class="enlace" href="/decisiones/{{ h.id }}">registro #{{ h.id }}</a></p>
+  {% endfor %}
+</section>
+
+<section aria-labelledby="t-extraccion">
+  <div class="seccion-cabeza">
+    <h2 id="t-extraccion">Lo que leyó el extractor</h2>
+    <span class="estado {{ 'estado--pagar' if d.consistente else 'estado--escalar' }}">{{ icono('check' if d.consistente else 'persona') }}{{ 'Las dos lecturas coinciden' if d.consistente else 'Las dos lecturas difieren' }}</span>
+  </div>
+  <dl class="ficha">
+    <div><dt>Proveedor</dt><dd>{{ e.proveedor_nombre or '—' }}</dd></div>
+    <div><dt>Identificación</dt><dd>{{ e.proveedor_tax_id or '—' }}</dd></div>
+    <div><dt>Monto</dt><dd>{{ e.monto_total|monto(e.moneda) }}</dd></div>
+    <div><dt>Acuerdo</dt><dd>{{ e.referencia_acuerdo or 'No referencia' }}</dd></div>
+    <div><dt>Emisión</dt><dd>{{ e.fecha_emision or '—' }}</dd></div>
+    <div><dt>Vencimiento</dt><dd>{{ e.fecha_vencimiento or '—' }}</dd></div>
+    <div class="ficha__doble"><dt>Pago a</dt><dd>{{ e.banco or '—' }} · cuenta {{ e.cuenta_destino|enmascarar }}</dd></div>
+    {% if d.fecha_pago_programada %}<div><dt>Pago programado</dt><dd>{{ d.fecha_pago_programada }}</dd></div>{% endif %}
+    <div class="ficha__ancha"><dt>Conceptos</dt><dd>{{ e.conceptos|join(' · ') or '—' }}</dd></div>
+    {% if e.observaciones %}<div class="ficha__ancha"><dt>Observaciones del extractor</dt><dd>{{ e.observaciones }}</dd></div>{% endif %}
+  </dl>
+</section>
+
+<section aria-labelledby="t-controles">
+  {% set con_observacion = d.reglas|rejectattr('veredicto', 'equalto', 'OK')|list %}
+  {% set en_orden = d.reglas|selectattr('veredicto', 'equalto', 'OK')|list %}
+  <div class="seccion-cabeza">
+    <h2 id="t-controles">Controles del mandato</h2>
+    <span class="tenue">{{ en_orden|length }} de {{ d.reglas|length }} en orden</span>
+  </div>
+  {% macro control(r) %}
+    <li class="control control--{{ r.veredicto|lower }}{% if r.regla_id == d.regla_decisiva %} control--decisiva{% endif %}">
+      <span class="control__id">{{ r.regla_id }}</span>
+      <div class="control__texto">
+        <p class="control__nombre">{{ r.nombre }}{% if r.regla_id == d.regla_decisiva %} <span class="decisiva">decidió</span>{% endif %}</p>
+        {% if r.mensaje and r.veredicto != 'OK' %}<p class="control__mensaje">{{ r.mensaje }}</p>{% endif %}
+        {% if r.evidencia and r.veredicto != 'OK' %}<details><summary>Evidencia</summary><pre>{{ r.evidencia|tojson(indent=1) }}</pre></details>{% endif %}
+      </div>
+      <span class="control__veredicto">{% if r.veredicto == 'OK' %}{{ icono('check') }}En orden{% elif r.veredicto == 'ESCALAR' %}{{ icono('persona') }}Escala{% else %}{{ icono('alto') }}Frena{% endif %}</span>
+    </li>
+  {% endmacro %}
+  {% if con_observacion %}
+  <ol class="controles">{% for r in con_observacion %}{{ control(r) }}{% endfor %}</ol>
+  {% endif %}
+  <details class="plegable" {% if not con_observacion %}open{% endif %}>
+    <summary>{{ en_orden|length }} controles en orden</summary>
+    <ol class="controles controles--en-orden">{% for r in en_orden %}{{ control(r) }}{% endfor %}</ol>
+  </details>
+</section>
+
+{% if d.jev %}
+<section aria-labelledby="t-jev">
+  <div class="seccion-cabeza">
+    <h2 id="t-jev">JEV</h2>
+    <span class="tenue">{{ 'modelo real' if d.jev.backend == 'typesafe' else 'shim sobre LLM' }} · {{ d.jev.modelo }} · {{ d.jev.latencia_ms|num(0) }} ms</span>
+  </div>
+  {% set preguntas = {
+    'is_invoice': '¿Es una factura o cuenta de cobro?',
+    'hidden_instructions': '¿Trae instrucciones dirigidas a un sistema automático?',
+    'matches_agreement': '¿Coincide con lo acordado?',
+    'payment_risk': 'Señales de riesgo del pago (0 a 3)',
+    'expense_category': 'Categoría del gasto'} %}
+  <ul class="jev">
+    {% for clave, r in d.jev.respuestas.items() %}
+    <li class="jev__fila">
+      <span class="jev__pregunta">{{ preguntas.get(clave, clave) }}</span>
+      <span class="jev__respuesta">{% if r.tipo == 'noul' %}{{ 'Sí' if r.probabilidad >= 0.5 else 'No' }}{% elif r.tipo == 'score' %}{{ r.valor|num(1) }}{% else %}{{ r.valor|replace('_', ' ') }}{% endif %}</span>
+      {% set p = r.probabilidad if r.tipo == 'noul' else (r.confianza or 0) %}
+      <span class="jev__prob"><span class="medidor"><span style="width: {{ (p * 100)|round|int }}%"></span></span>{{ (p * 100)|round|int }} %</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

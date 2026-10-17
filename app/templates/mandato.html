@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Mandato · Mandato{% endblock %}
+{% block contenido %}
+{% set base = mandato.empresa.moneda_base %}
+<div class="encabezado">
+  <h1>Mandato</h1>
+  <p class="bajada">Aquí defines a quién se le paga, a qué cuenta, cuánto y contra qué acuerdo. Versión <code>{{ hash }}</code>; cada decisión guarda la versión con la que el agente la tomó.</p>
+</div>
+{% if guardado %}<p class="aviso aviso--ok" role="status">Mandato guardado. Versión nueva <code>{{ hash }}</code>.</p>{% endif %}
+
+<dl class="datos datos--limites">
+  <div><dt>Tope por pago</dt><dd>{{ mandato.limites.tope_por_pago|monto(base) }}</dd><p class="tenue">Más que esto se frena</p></div>
+  <div><dt>Aprobación humana desde</dt><dd>{{ mandato.limites.umbral_aprobacion_humana|monto(base) }}</dd><p class="tenue">Más que esto se escala</p></div>
+  <div><dt>Presupuesto de {{ mes }}</dt><dd>{{ consumido|monto(base) }}</dd><p class="tenue">de {{ mandato.limites.presupuesto_periodo.monto|dinero }} · <span class="medidor medidor--linea"><span style="width: {{ [100, (consumido / (mandato.limites.presupuesto_periodo.monto|float) * 100)|round|int]|min }}%"></span></span></p></div>
+  <div><dt>Acuerdo exigido desde</dt><dd>{{ mandato.conciliacion.exigir_acuerdo_desde|monto(base) }}</dd><p class="tenue">Tolerancia {{ mandato.conciliacion.tolerancia_pct|num(0) }} %</p></div>
+</dl>
+
+<section aria-labelledby="t-prov">
+  <div class="seccion-cabeza"><h2 id="t-prov">Beneficiarios permitidos</h2><span class="tenue">{{ mandato.proveedores_permitidos|length }}</span></div>
+  <div class="tabla-envoltura" tabindex="0" role="region" aria-labelledby="t-prov">
+  <table>
+    <thead><tr><th scope="col">Beneficiario</th><th scope="col">Identificación</th><th scope="col">País</th><th scope="col">Banco y cuenta</th><th scope="col">Dominio de correo</th></tr></thead>
+    <tbody>
+    {% for p in mandato.proveedores_permitidos %}
+    <tr><td><strong>{{ p.nombre }}</strong><br><span class="tenue">{{ p.id }}</span></td><td>{{ p.tax_id }}</td><td>{{ p.pais }}</td><td>{{ p.banco }} · {{ p.cuenta|enmascarar }}</td><td>{{ p.dominio_correo or '—' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section aria-labelledby="t-acuerdos">
+  <div class="seccion-cabeza"><h2 id="t-acuerdos">Acuerdos vigentes</h2><span class="tenue">{{ mandato.acuerdos|length }}</span></div>
+  <div class="tabla-envoltura" tabindex="0" role="region" aria-labelledby="t-acuerdos">
+  <table>
+    <thead><tr><th scope="col">Acuerdo</th><th scope="col">Beneficiario</th><th scope="col">Concepto</th><th scope="col" class="num">Monto</th><th scope="col">Vigente hasta</th></tr></thead>
+    <tbody>
+    {% for a in mandato.acuerdos %}
+    <tr><td>{{ a.id }}</td><td>{{ a.proveedor_id }}</td><td>{{ a.concepto }}</td><td class="num">{{ a.monto|monto(a.moneda) }}</td><td>{{ a.vigente_hasta }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<details class="tarjeta editor" {% if error %}open{% endif %}>
+  <summary>Editar el mandato</summary>
+  <form method="post" action="/mandato">
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <label for="json">Mandato en JSON. Se valida completo antes de guardar.</label>
+    <textarea id="json" name="json" class="codigo" spellcheck="false">{{ json }}</textarea>
+    <div class="campo campo--pin">
+      <label for="pin-mandato">PIN</label>
+      <input id="pin-mandato" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
+    </div>
+    <button class="boton">Validar y guardar</button>
+  </form>
+</details>
+{% endblock %}

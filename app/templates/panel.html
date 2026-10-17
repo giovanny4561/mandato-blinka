@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "macros.html" import icono, movimiento %}
+{% block meta %}{% if demo_en_curso %}<meta http-equiv="refresh" content="4">{% endif %}{% endblock %}
+{% block titulo %}Panel · Mandato{% endblock %}
+{% block contenido %}
+{% set m = metricas %}
+<div class="encabezado">
+  <h1>Panel</h1>
+  <p class="bajada">{{ empresa }} · mandato <code>{{ mandato_hash }}</code></p>
+</div>
+
+{% if demo_en_curso %}<p class="aviso" role="status">Procesando el set de demostración en segundo plano. Esta página se actualiza sola.</p>{% endif %}
+
+{% if m.total %}
+<section class="resumen" aria-labelledby="t-resumen">
+  <h2 id="t-resumen" class="resumen__frase">
+    <span class="cifra">{{ m.pagar + m.frenar }}</span> de <span class="cifra">{{ m.total }}</span> facturas se decidieron sin una persona.
+    <span class="resumen__resto">{% if m.pendientes %}{{ m.pendientes }} esperan aprobación.{% else %}No hay escaladas pendientes.{% endif %}</span>
+  </h2>
+  <div class="barra-decisiones" role="img" aria-label="{{ m.pagar }} pagadas, {{ m.escalar }} escaladas, {{ m.frenar }} frenadas">
+    {% if m.pagar %}<span class="seg seg--pagar" style="flex: {{ m.pagar }}"></span>{% endif %}
+    {% if m.escalar %}<span class="seg seg--escalar" style="flex: {{ m.escalar }}"></span>{% endif %}
+    {% if m.frenar %}<span class="seg seg--frenar" style="flex: {{ m.frenar }}"></span>{% endif %}
+  </div>
+  <ul class="leyenda">
+    <li><span class="punto punto--pagar"></span>{{ m.pagar }} pagadas <span class="tenue">{{ m.pagar_pct|pct }}</span></li>
+    <li><span class="punto punto--escalar"></span>{{ m.escalar }} escaladas a una persona <span class="tenue">{{ m.escaladas_pct|pct }}</span></li>
+    <li><span class="punto punto--frenar"></span>{{ m.frenar }} frenadas <span class="tenue">{{ m.frenadas_pct|pct }}</span></li>
+  </ul>
+
+  <div class="invariante {{ 'invariante--rota' if m.pagos_fuera_de_reglas else '' }}">
+    {{ icono('escudo', 'invariante__icono') }}
+    <div>
+      <p class="invariante__titulo"><span class="cifra">{{ m.pagos_fuera_de_reglas }}</span> {{ 'pago' if m.pagos_fuera_de_reglas == 1 else 'pagos' }} fuera de reglas</p>
+      <p class="invariante__texto">El panel lo recalcula en cada carga: cada factura que el agente pagó pasó sus 18 controles.</p>
+    </div>
+  </div>
+
+  <dl class="datos">
+    <div><dt>Costo del set</dt><dd>US$ {{ m.costo_total_usd|num(4) }}</dd></div>
+    <div><dt>Por factura</dt><dd>US$ {{ m.costo_por_factura_usd|num(4) }}</dd></div>
+    <div><dt>JEV, promedio</dt><dd>{{ (m.latencia_jev_ms / 1000)|num(1) }} s <span class="tenue">{{ 'modelo real' if (m.backend_jev or backend_jev) == 'typesafe' else 'shim sobre LLM' }}</span></dd></div>
+    <div><dt>Autonomía</dt><dd>{{ m.autonomia_pct|pct }}</dd></div>
+  </dl>
+</section>
+
+<section aria-labelledby="t-mov">
+  <div class="seccion-cabeza">
+    <h2 id="t-mov">Últimas decisiones</h2>
+    <a class="enlace" href="/decisiones">Ver el registro completo</a>
+  </div>
+  <ul class="movimientos">
+    {% for d in decisiones %}{{ movimiento(d) }}{% endfor %}
+  </ul>
+</section>
+{% else %}
+<section class="vacio-estado">
+  {{ icono('documento', 'vacio-estado__icono') }}
+  <h2>Todavía no hay decisiones</h2>
+  <p>Sube una factura o procesa el set de demostración: 24 facturas simuladas, 15 de ellas con trampa.</p>
+  <a class="boton" href="/bandeja">Ir a la bandeja</a>
+</section>
+{% endif %}
+{% endblock %}
