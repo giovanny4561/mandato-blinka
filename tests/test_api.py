@@ -92,12 +92,12 @@ def simulados(monkeypatch):
 
 def test_subir_factura_decide_y_redirige(simulados):
     with TestClient(app) as c:
-        assert c.post("/bandeja", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "mal"}).status_code == 403
-        r = c.post("/bandeja", files={"archivo": ("F04_carla_rios.txt", CHAT, "text/plain")}, data={"pin": "123456"}, follow_redirects=False)
+        assert c.post("/bandeja", files={"archivos": ("F04.txt", CHAT, "text/plain")}, data={"pin": "mal"}).status_code == 403
+        r = c.post("/bandeja", files={"archivos": ("F04_carla_rios.txt", CHAT, "text/plain")}, data={"pin": "123456"}, follow_redirects=False)
         assert r.status_code == 303 and r.headers["location"] == "/decisiones/1"
         d = registro.obtener(1)
         assert d.decision == "PAGAR" and d.canal == "chat" and d.jev.backend == "llm"
-        assert c.post("/bandeja", files={"archivo": ("x.exe", b"MZ", "application/octet-stream")}, data={"pin": "123456"}).status_code == 400
+        assert c.post("/bandeja", files={"archivos": ("x.exe", b"MZ", "application/octet-stream")}, data={"pin": "123456"}).status_code == 400
         otra = c.post("/api/procesar", files={"archivo": ("F22.txt", CHAT, "text/plain")}, data={"pin": "123456"}).json()
         assert otra["decision"] == "FRENAR" and otra["regla_decisiva"] == "R04"  # misma factura otra vez: duplicado
         assert otra["extraccion"]["cuenta_destino"] == "****7890"  # la API no expone la cuenta completa
@@ -168,8 +168,8 @@ def test_pin_de_ejemplo_o_corto_deshabilita_todo(monkeypatch):
 
 def test_trabajo_en_vivo_emite_eventos_y_registra(simulados):
     with TestClient(app) as c:
-        assert c.post("/api/trabajos", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "mal"}).status_code == 403
-        r = c.post("/api/trabajos", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "123456"})
+        assert c.post("/api/trabajos", files={"archivos": ("F04.txt", CHAT, "text/plain")}, data={"pin": "mal"}).status_code == 403
+        r = c.post("/api/trabajos", files={"archivos": ("F04.txt", CHAT, "text/plain")}, data={"pin": "123456"})
         assert r.status_code == 200
         tid = r.json()["trabajo"]
         cuerpo = c.get(f"/api/trabajos/{tid}/eventos").text
@@ -179,6 +179,18 @@ def test_trabajo_en_vivo_emite_eventos_y_registra(simulados):
         assert decidida["decision"] == "PAGAR" and len(decidida["reglas"]) == 18
         assert registro.metricas()["total"] == 1
         assert c.get("/api/trabajos/nope/eventos").status_code == 404
+
+
+def test_varias_facturas_en_una_subida(simulados):
+    dos = [("archivos", ("F04.txt", CHAT, "text/plain")), ("archivos", ("F22.txt", CHAT.replace(b"CR-010", b"CR-011"), "text/plain"))]
+    with TestClient(app) as c:
+        tid = c.post("/api/trabajos", files=dos, data={"pin": "123456"}).json()["trabajo"]
+        cuerpo = c.get(f"/api/trabajos/{tid}/eventos").text
+        assert cuerpo.count('"decidida"') == 2 and registro.metricas()["total"] == 2
+        r = c.post("/bandeja", files=dos, data={"pin": "123456"}, follow_redirects=False)
+        assert r.status_code == 303 and r.headers["location"].startswith("/en-vivo?t=")
+        demasiadas = [("archivos", (f"F{i}.txt", CHAT, "text/plain")) for i in range(51)]
+        assert c.post("/api/trabajos", files=demasiadas, data={"pin": "123456"}).status_code == 400
 
 
 def test_repeticion_no_llama_modelos_y_respeta_el_orden(monkeypatch):

@@ -40,20 +40,25 @@
 
     <section class="tarjeta vivo__acciones">
       <h2>Probar</h2>
-      <button class="boton boton--secundario" id="repetir" type="button">Repetir el registro ({{ n_registro }})</button>
-      <p class="tenue">Reproduce las decisiones guardadas. No llama a ningún modelo ni gasta créditos.</p>
-      <form id="subir" class="vivo__form">
-        <label for="v-archivo">Procesar una factura en vivo</label>
-        <input id="v-archivo" type="file" name="archivo" accept=".pdf,.png,.jpg,.jpeg,.eml,.txt" required>
+      <div class="vivo__bloque">
+        <h3>Ver otra vez</h3>
+        <button class="boton boton--secundario" id="repetir" type="button" {% if not n_registro %}disabled{% endif %}>Repetir las {{ n_registro }} decisiones</button>
+        <p class="tenue">{% if n_registro %}Reproduce lo que ya está en el registro. Sin modelos, sin PIN y sin costo.{% else %}Todavía no hay decisiones en el registro.{% endif %}</p>
+      </div>
+      <form id="subir" class="vivo__form vivo__bloque">
+        <h3>Procesar facturas nuevas</h3>
+        <p class="tenue">Usa los modelos y gasta créditos: escribe el PIN de operador una sola vez.</p>
         <label for="v-pin">PIN de operador</label>
         <input id="v-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
-        <button class="boton">Procesar</button>
+        <label for="v-archivo">Tus facturas: PDF, imagen, XML (DIAN, CFDI), correo o chat; hasta 50 a la vez</label>
+        <input id="v-archivo" type="file" name="archivos" multiple accept=".pdf,.png,.jpg,.jpeg,.xml,.eml,.txt">
+        <button class="boton" id="v-subir">Procesar mis facturas</button>
+        {% if n_demo_pendientes %}
+        <button class="boton boton--secundario" id="v-demo" formaction="/bandeja/demo" formmethod="post" {% if demo_en_curso %}disabled{% endif %}>Procesar el set de demostración ({{ n_demo_pendientes }} de {{ n_demo }} pendientes)</button>
+        {% else %}
+        <p class="tenue">Las {{ n_demo }} facturas del set de demostración ya están en el registro: usa «Repetir» para verlas otra vez.</p>
+        {% endif %}
         <p class="error" id="v-error" role="alert" hidden></p>
-      </form>
-      <form method="post" action="/bandeja/demo" class="vivo__form">
-        <label for="v-pin-demo">Set de demostración en vivo ({{ n_demo }} facturas, salta las registradas)</label>
-        <input id="v-pin-demo" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
-        <button class="boton boton--secundario">Procesar el set</button>
       </form>
     </section>
 

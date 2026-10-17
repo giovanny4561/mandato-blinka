@@ -10,17 +10,17 @@
 {% if demo_en_curso %}<p class="aviso" role="status">Procesando el set de demostración: {{ decisiones|length }} decisiones registradas hasta ahora. Esta página se actualiza sola.</p>{% endif %}
 <div class="dos-columnas">
   <form class="tarjeta formulario" method="post" action="/bandeja" enctype="multipart/form-data">
-    <h2>Subir una factura</h2>
-    <p class="tenue">PDF, PNG, JPG, EML o TXT, hasta 5 MB. Tarda unos segundos: dos lecturas independientes y JEV.</p>
+    <h2>Subir facturas</h2>
+    <p class="tenue">PDF, PNG, JPG, XML (DIAN, CFDI), EML o TXT, hasta 5 MB cada una y 50 por vez. Una sola abre su decisión; varias se ven en En vivo.</p>
     <div class="campo">
-      <label for="archivo">Archivo</label>
-      <input id="archivo" type="file" name="archivo" accept=".pdf,.png,.jpg,.jpeg,.eml,.txt" required>
+      <label for="archivo">Archivos</label>
+      <input id="archivo" type="file" name="archivos" multiple accept=".pdf,.png,.jpg,.jpeg,.xml,.eml,.txt" required>
     </div>
     <div class="campo campo--pin">
       <label for="pin-subir">PIN de operador</label>
       <input id="pin-subir" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
     </div>
-    <button class="boton">{{ icono('subir') }}Procesar factura</button>
+    <button class="boton">{{ icono('subir') }}Procesar</button>
   </form>
   <form class="tarjeta formulario" method="post" action="/bandeja/demo">
     <h2>Set de demostración</h2>

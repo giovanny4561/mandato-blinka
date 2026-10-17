@@ -1,6 +1,7 @@
 """Mandato — FastAPI: panel, mandato, bandeja, decisiones, pendientes y /api."""
 import asyncio
 import base64
+import hashlib
 
 import anyio
 import hmac
@@ -14,7 +15,7 @@ from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Query, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -67,7 +68,8 @@ plantillas.env.filters["sin_veredicto"] = lambda t: re.sub(r"^(PAGAR|ESCALAR|FRE
 plantillas.env.globals["n_pendientes"] = lambda: len(registro.pendientes())
 plantillas.env.globals["v"] = str(int((APP_DIR / "static" / "estilo.css").stat().st_mtime))  # rompe la caché de estáticos al desplegar
 
-EXTENSIONES = {".pdf", ".png", ".jpg", ".jpeg", ".eml", ".txt"}
+EXTENSIONES = {".pdf", ".png", ".jpg", ".jpeg", ".xml", ".eml", ".txt"}
+MAX_ARCHIVOS = 50
 MAX_BYTES = 5 * 1024 * 1024
 _demo = threading.Lock()  # una sola corrida de la carpeta demo a la vez (por proceso)
 _decidiendo = threading.Lock()  # leer historial + decidir + insertar es atómico; por eso el servidor corre con 1 worker
@@ -143,11 +145,14 @@ def archivos_demo() -> list[Path]:
     return sorted(p for p in carpeta.glob("*") if p.suffix.lower() in EXTENSIONES) if carpeta.exists() else []
 
 
-def docs_demo_pendientes() -> list[Documento]:
-    """La demo es idempotente: solo las facturas del set que todavía no están en el registro."""
+def demo_pendientes() -> list[Path]:
+    """La demo es idempotente: solo los archivos del set cuyo hash todavía no está en el registro."""
     vistos = {h.factura_hash for h in registro.historial()}
-    docs = [documentos.cargar_archivo(r) for r in archivos_demo()]
-    return [d for d in docs if d.hash not in vistos]
+    return [r for r in archivos_demo() if hashlib.sha256(r.read_bytes()).hexdigest() not in vistos]
+
+
+def docs_demo_pendientes() -> list[Documento]:
+    return [documentos.cargar_archivo(r) for r in demo_pendientes()]
 
 
 def correr_demo(trabajo: flujo.Trabajo, docs: list[Documento]) -> None:
@@ -258,12 +263,12 @@ def api_decisiones(limite: int = Query(200, ge=1, le=500)):
 
 
 @app.post("/api/trabajos")
-async def api_trabajo(tareas: BackgroundTasks, archivo: UploadFile, pin: str = Form(...)):
-    """Sube una factura y devuelve un trabajo cuyo progreso se sigue por SSE en /api/trabajos/{id}/eventos."""
+async def api_trabajo(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...), pin: str = Form(...)):
+    """Sube una o varias facturas y devuelve un trabajo cuyo progreso se sigue por SSE en /api/trabajos/{id}/eventos."""
     exigir_pin(pin)
-    doc = await leer_subida(archivo)
-    t = flujo.crear(1)
-    tareas.add_task(flujo.procesar_lote, t, [doc], _decidiendo)
+    docs = await leer_subidas(archivos)
+    t = flujo.crear(len(docs))
+    tareas.add_task(flujo.procesar_lote, t, docs, _decidiendo)
     return JSONResponse({"trabajo": t.id})
 
 
@@ -317,10 +322,16 @@ async def api_procesar(archivo: UploadFile, pin: str = Form(...)):
     return publico(registro.obtener(await run_in_threadpool(procesar, doc)))
 
 
+async def leer_subidas(archivos: list[UploadFile]) -> list[Documento]:
+    if not archivos or len(archivos) > MAX_ARCHIVOS:
+        raise HTTPException(400, f"sube entre 1 y {MAX_ARCHIVOS} archivos por vez")
+    return [await leer_subida(a) for a in archivos]
+
+
 async def leer_subida(archivo: UploadFile) -> Documento:
     nombre = Path(archivo.filename or "factura").name
     if Path(nombre).suffix.lower() not in EXTENSIONES:
-        raise HTTPException(400, "formato no soportado: usa PDF, PNG, JPG, EML o TXT")
+        raise HTTPException(400, "formato no soportado: usa PDF, PNG, JPG, XML, EML o TXT")
     contenido = await archivo.read(MAX_BYTES + 1)
     if len(contenido) > MAX_BYTES:
         raise HTTPException(400, "archivo demasiado grande (máx. 5 MB)")
@@ -396,10 +407,15 @@ def bandeja(request: Request):
 
 
 @app.post("/bandeja", include_in_schema=False)
-async def subir(archivo: UploadFile, pin: str = Form(...)):
+async def subir(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...), pin: str = Form(...)):
+    """Una factura: espera la decisión y abre su detalle. Varias: las procesa en lote y abre En vivo."""
     exigir_pin(pin)
-    doc = await leer_subida(archivo)
-    return RedirectResponse(f"/decisiones/{await run_in_threadpool(procesar, doc)}", status_code=303)
+    docs = await leer_subidas(archivos)
+    if len(docs) == 1:
+        return RedirectResponse(f"/decisiones/{await run_in_threadpool(procesar, docs[0])}", status_code=303)
+    t = flujo.crear(len(docs))
+    tareas.add_task(flujo.procesar_lote, t, docs, _decidiendo)
+    return RedirectResponse(f"/en-vivo?t={t.id}", status_code=303)
 
 
 @app.post("/bandeja/demo", include_in_schema=False)
@@ -416,7 +432,8 @@ def demo(tareas: BackgroundTasks, pin: str = Form(...)):
 @app.get("/en-vivo", response_class=HTMLResponse, include_in_schema=False)
 def en_vivo(request: Request, t: str | None = None):
     return render(request, "en_vivo.html", trabajo=t if t and flujo.obtener(t) else None,
-                  n_registro=len(flujo.repeticion()), n_demo=len(archivos_demo()))
+                  n_registro=len(flujo.repeticion()), n_demo=len(archivos_demo()), n_demo_pendientes=len(demo_pendientes()),
+                  demo_en_curso=_demo.locked())
 
 
 @app.get("/decisiones", response_class=HTMLResponse, include_in_schema=False)

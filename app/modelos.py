@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 
 Veredicto = Literal["PAGAR", "ESCALAR", "FRENAR"]
 VeredictoRegla = Literal["OK", "ESCALAR", "FRENAR"]
-Canal = Literal["pdf", "imagen", "correo", "chat", "agente"]
+Canal = Literal["pdf", "imagen", "xml", "correo", "chat", "agente"]
 Actor = Literal["agente", "humano"]
 
 

@@ -5,7 +5,7 @@
   const capas = { aristas: svg.querySelector("#aristas"), nodos: svg.querySelector("#nodos"), pulsos: svg.querySelector("#pulsos") };
   const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const COLOR = { OK: "#1f9a62", ESCALAR: "#d9922b", FRENAR: "#d4483b", PAGAR: "#1f9a62", acento: "#2a4bd0" };
-  const CANALES = [["pdf", "PDF"], ["imagen", "Imagen"], ["correo", "Correo"], ["chat", "Chat"], ["agente", "Agente"]];
+  const CANALES = [["pdf", "PDF"], ["imagen", "Imagen"], ["xml", "XML"], ["correo", "Correo"], ["chat", "Chat"]];
   const CONTROLES = ["R00","R01","R02","R03","R04","R05","R06","R07","R08","R09","R10","R11","R12","R13","J01","J02","J03","J04"];
   const SALIDAS = [["PAGAR", "Pagada"], ["ESCALAR", "Por revisar"], ["FRENAR", "Frenada"]];
   const nodos = {};
@@ -58,7 +58,7 @@
   }
 
   function alRecibir(ev) {
-    const canal = "in-" + (ev.canal || "pdf");
+    const canal = nodos["in-" + ev.canal] ? "in-" + ev.canal : "in-pdf";
     leyendo++; progreso();
     encender(canal, COLOR.acento, 0.15); latido(canal);
     pulso(canal, "lec-a", COLOR.acento); pulso(canal, "lec-b", COLOR.acento);
@@ -144,10 +144,12 @@
 
   $("repetir").addEventListener("click", () => escuchar("/api/repeticion", "Repitiendo el registro"));
   $("subir").addEventListener("submit", async (e) => {
+    if (e.submitter && e.submitter.id === "v-demo") return;  // el set va por el formulario normal a /bandeja/demo
     e.preventDefault();
     const err = $("v-error"); err.hidden = true;
+    if (!$("v-archivo").files.length) { err.textContent = "Elige al menos una factura."; err.hidden = false; return; }
     const r = await fetch("/api/trabajos", { method: "POST", body: new FormData(e.target) });
-    if (!r.ok) { err.textContent = r.status === 403 ? "PIN incorrecto." : "No se pudo subir: revisa el formato (PDF, PNG, JPG, EML o TXT, hasta 5 MB)."; err.hidden = false; return; }
+    if (!r.ok) { err.textContent = r.status === 403 ? "PIN incorrecto." : "No se pudo subir: revisa el formato (PDF, PNG, JPG, XML, EML o TXT, hasta 5 MB cada una y 50 por vez)."; err.hidden = false; return; }
     const { trabajo } = await r.json();
     escuchar(`/api/trabajos/${trabajo}/eventos`, "Procesando en vivo");
   });

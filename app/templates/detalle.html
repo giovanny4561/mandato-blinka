@@ -6,7 +6,7 @@
 <div class="encabezado encabezado--detalle">
   <div>
     <h1>{{ e.proveedor_nombre or 'Documento sin proveedor legible' }}</h1>
-    <p class="bajada">{{ e.numero_factura or 'Sin número' }} · {{ d.archivo }} · llegó por {{ {'pdf': 'PDF', 'imagen': 'imagen', 'correo': 'correo', 'chat': 'chat', 'agente': 'agente'}[d.canal] }} · {{ d.ts|hora }}</p>
+    <p class="bajada">{{ e.numero_factura or 'Sin número' }} · {{ d.archivo }} · llegó por {{ {'pdf': 'PDF', 'imagen': 'imagen', 'xml': 'XML', 'correo': 'correo', 'chat': 'chat', 'agente': 'agente'}[d.canal] }} · {{ d.ts|hora }}</p>
   </div>
   <p class="detalle__monto">{{ e.monto_total|monto(e.moneda) }}</p>
 </div>
@@ -20,7 +20,7 @@
   <h2 id="t-flujo" class="flujo__cabeza">Cómo se decidió</h2>
   <ol class="flujo">
     <li class="flujo__paso"><span class="flujo__titulo">Recibida</span>
-      <span class="flujo__dato">{{ {'pdf': 'PDF', 'imagen': 'Imagen', 'correo': 'Correo', 'chat': 'Chat', 'agente': 'Agente'}[d.canal] }} · {{ d.ts|hora }}</span></li>
+      <span class="flujo__dato">{{ {'pdf': 'PDF', 'imagen': 'Imagen', 'xml': 'XML', 'correo': 'Correo', 'chat': 'Chat', 'agente': 'Agente'}[d.canal] }} · {{ d.ts|hora }}</span></li>
     <li class="flujo__paso{{ '' if d.consistente else ' flujo__paso--escalar' }}"><span class="flujo__titulo">Leída por dos modelos</span>
       <span class="flujo__dato">{{ 'Coinciden' if d.consistente else 'No coinciden' }} · ≈ {{ ([d.latencia_ms - jev_ms, 0]|max / 1000)|num(1) }} s</span></li>
     {% if d.jev %}<li class="flujo__paso"><span class="flujo__titulo">JEV</span>
