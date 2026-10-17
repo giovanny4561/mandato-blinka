@@ -230,7 +230,18 @@ textarea.codigo { height: 380px; padding: 12px 14px; font: .8125rem/1.5 var(--mo
 .vivo__recientes { padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
 .vivo__recientes .movimientos { box-shadow: none; background: transparent; border-radius: 0; }
 .vivo__recientes .mov { padding-left: 0; padding-right: 0; }
-.vivo__recientes .mov__titulo { white-space: normal; }
+/* El lateral nunca empuja la página: en escritorio mide lo mismo que la red y la lista se desplaza por dentro */
+.vivo__prov { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vivo__expl { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.vivo__recientes { grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.vivo__recientes .movimientos { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--linea-fuerte) transparent; }
+@media (min-width: 861px) {
+  .vivo__lado { contain: size; grid-template-rows: auto minmax(0, 1fr); }
+  .vivo__expl { -webkit-line-clamp: 2; line-clamp: 2; }
+  .vivo__recientes .movimientos { min-height: 0; -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+}
+@media (max-width: 860px) { .vivo__actual { min-height: 270px; } .vivo__recientes .movimientos { height: 300px; } }
+
 .franja { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 14px 32px; align-items: flex-end; }
 .franja__grupo { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .franja__grupo--procesar { flex: 1 1 560px; align-items: flex-end; justify-content: flex-end; }
@@ -292,7 +303,7 @@ tr:last-child td { border-bottom: 0; }
 }
 
 /* En vivo: red de decisión animada */
-.vivo { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.vivo { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr); gap: 16px; align-items: stretch; }
 .vivo__red { padding: 18px 18px 14px; display: grid; gap: 10px; }
 .vivo__barra { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
 .vivo__modo { font-weight: 520; }
