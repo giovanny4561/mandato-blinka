@@ -12,6 +12,11 @@ data/entrantes/
 data/resultados.json
 data/resultados_*.json
 data/semilla_*.sqlite
+demo/*.sqlite
+demo/*.sqlite-wal
+demo/*.sqlite-shm
+demo/entrantes/
+demo/resultados*.json
 .claude-flow/
 .swarm/
 ruvector.db

@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS anclajes (
   hash TEXT NOT NULL,
   mensaje TEXT NOT NULL,
   ots_b64 TEXT NOT NULL,
-  calendarios TEXT NOT NULL
+  calendarios TEXT NOT NULL,
+  bloque INTEGER
 );
 CREATE INDEX IF NOT EXISTS ix_decisiones_prov ON decisiones(proveedor_id, numero_factura);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_decisiones_ref ON decisiones(referencia_a) WHERE referencia_a IS NOT NULL;
@@ -155,6 +156,10 @@ def _migrar(con: _Con) -> None:
         existentes = {r["name"] for r in con.execute("PRAGMA table_info(decisiones)")}
         for c in {"hash_previo", "hash"} - existentes:
             con.execute(f"ALTER TABLE decisiones ADD COLUMN {c} TEXT")
+    if con.pg:
+        con.execute("ALTER TABLE anclajes ADD COLUMN IF NOT EXISTS bloque INTEGER")
+    elif "bloque" not in {r["name"] for r in con.execute("PRAGMA table_info(anclajes)")}:
+        con.execute("ALTER TABLE anclajes ADD COLUMN bloque INTEGER")
     con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_decisiones_previo ON decisiones(hash_previo)")
     if not con.execute("SELECT 1 FROM decisiones WHERE hash IS NULL LIMIT 1").fetchone():
         return
@@ -289,6 +294,12 @@ def insertar_anclaje(cabeza: dict, mensaje: str, ots: bytes, calendarios: list[s
         else:
             fila["id"] = int(con.execute(sql, tuple(fila.values())).lastrowid)
     return fila
+
+
+def confirmar_anclaje(id_: int, ots: bytes, bloque: int, db: Destino = None) -> None:
+    """La prueba ya está en un bloque de Bitcoin. Se actualiza solo la tabla de anclajes, nunca el registro sellado."""
+    with conectar(db) as con:
+        con.execute("UPDATE anclajes SET ots_b64 = ?, bloque = ? WHERE id = ?", (base64.b64encode(ots).decode(), bloque, id_))
 
 
 def anclajes(limite: int = 20, db: Destino = None) -> list[dict]:

@@ -5,5 +5,5 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 COPY . .
-ENV PORT=8000 DATA_DIR=/app/data PATH="/app/.venv/bin:$PATH"
+ENV PORT=8000 DATA_DIR=/app/demo PATH="/app/.venv/bin:$PATH"
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers 1"]

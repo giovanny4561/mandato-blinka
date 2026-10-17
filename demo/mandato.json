@@ -1,0 +1,275 @@
+{
+  "version": "2026-10-17-demo",
+  "empresa": {
+    "nombre": "Andina Labs Inc.",
+    "pais": "US",
+    "moneda_base": "USD"
+  },
+  "limites": {
+    "tope_por_pago": 10000,
+    "umbral_aprobacion_humana": 5000,
+    "presupuesto_periodo": {
+      "monto": 56000,
+      "recurrencia": "mensual"
+    },
+    "ventana_fraccionamiento_dias": 7,
+    "ventana_casi_duplicado_dias": 10
+  },
+  "conciliacion": {
+    "tolerancia_pct": 5,
+    "tolerancia_abs": 50,
+    "exigir_acuerdo_desde": 3000
+  },
+  "umbrales_jev": {
+    "instrucciones_ocultas_frenar": 0.35,
+    "no_es_factura_escalar": 0.5,
+    "riesgo_escalar": 1.5,
+    "riesgo_frenar": 2.5,
+    "coincide_confianza_min": 0.6
+  },
+  "proveedores_permitidos": [
+    {
+      "id": "PRV-001",
+      "nombre": "Nube Andina SAS",
+      "tax_id": "901234567-8",
+      "pais": "CO",
+      "moneda": "USD",
+      "banco": "Bancolombia",
+      "cuenta": "03100190193",
+      "acepta_usdc": false,
+      "dominio_correo": "nubeandina.co"
+    },
+    {
+      "id": "PRV-002",
+      "nombre": "Pixel Forge LLC",
+      "tax_id": "87-1234567",
+      "pais": "US",
+      "moneda": "USD",
+      "banco": "Mercury",
+      "cuenta": "202411778821",
+      "acepta_usdc": true,
+      "billetera_usdc": "0x4f05b711c54a7f406c099bad45cc1893dd5dfba5",
+      "dominio_correo": "pixelforge.io"
+    },
+    {
+      "id": "PRV-003",
+      "nombre": "Logística Sur SpA",
+      "tax_id": "76543210-9",
+      "pais": "CL",
+      "moneda": "USD",
+      "banco": "Banco de Chile",
+      "cuenta": "00123456789",
+      "acepta_usdc": false,
+      "dominio_correo": "logisticasur.cl"
+    },
+    {
+      "id": "PRV-004",
+      "nombre": "Carla Ríos",
+      "tax_id": "RIOC850101XY1",
+      "pais": "MX",
+      "moneda": "USD",
+      "banco": "BBVA México",
+      "cuenta": "012180001234567890",
+      "acepta_usdc": true,
+      "billetera_usdc": "0x51ca08facab60690414bf6eca2e2902c2bdcaf3a",
+      "dominio_correo": null
+    },
+    {
+      "id": "PRV-005",
+      "nombre": "Datos del Valle SAS",
+      "tax_id": "901765432-1",
+      "pais": "CO",
+      "moneda": "USD",
+      "banco": "Banco de Bogotá",
+      "cuenta": "0045123987",
+      "acepta_usdc": false,
+      "dominio_correo": "datosdelvalle.co"
+    },
+    {
+      "id": "PRV-006",
+      "nombre": "Impresos Quetzal SA de CV",
+      "tax_id": "IQU1203157K2",
+      "pais": "MX",
+      "moneda": "USD",
+      "banco": "Banorte",
+      "cuenta": "072180009876543210",
+      "acepta_usdc": false,
+      "dominio_correo": "impresosquetzal.mx"
+    },
+    {
+      "id": "PRV-007",
+      "nombre": "Andes Cowork SpA",
+      "tax_id": "77123456-K",
+      "pais": "CL",
+      "moneda": "USD",
+      "banco": "Banco Santander Chile",
+      "cuenta": "0071234560",
+      "acepta_usdc": false,
+      "dominio_correo": "andescowork.cl"
+    },
+    {
+      "id": "PRV-008",
+      "nombre": "Inka Datos SAC",
+      "tax_id": "20601234567",
+      "pais": "PE",
+      "moneda": "USD",
+      "banco": "BCP",
+      "cuenta": "19412345678090",
+      "acepta_usdc": false,
+      "dominio_correo": "inkadatos.pe"
+    },
+    {
+      "id": "PRV-009",
+      "nombre": "Harbor Lane Legal LLP",
+      "tax_id": "84-7654321",
+      "pais": "US",
+      "moneda": "USD",
+      "banco": "Chase",
+      "cuenta": "483920175",
+      "acepta_usdc": true,
+      "dominio_correo": "harborlanelegal.com",
+      "billetera_usdc": "0x6f1e08fb322564f1a34ef55a3839f5dc2213a6c7"
+    },
+    {
+      "id": "PRV-010",
+      "nombre": "Brightpath Ads Inc.",
+      "tax_id": "85-2345678",
+      "pais": "US",
+      "moneda": "USD",
+      "banco": "Bank of America",
+      "cuenta": "3820019475",
+      "acepta_usdc": true,
+      "dominio_correo": "brightpathads.com",
+      "billetera_usdc": "0x5a343fd539091dd1aad1e7e137a776fa675d9574"
+    },
+    {
+      "id": "PRV-011",
+      "nombre": "Transportes Pacífico SAC",
+      "tax_id": "20509876543",
+      "pais": "PE",
+      "moneda": "USD",
+      "banco": "Interbank",
+      "cuenta": "2003001234567",
+      "acepta_usdc": false,
+      "dominio_correo": "transpacifico.pe"
+    },
+    {
+      "id": "PRV-012",
+      "nombre": "Lucía Fernández",
+      "tax_id": "1020345678",
+      "pais": "CO",
+      "moneda": "USD",
+      "banco": "Bancolombia",
+      "cuenta": "91200345678",
+      "acepta_usdc": true,
+      "dominio_correo": null,
+      "billetera_usdc": "0x084b189f4682bb34f05fc6bfa0734c1e79a8bdcc"
+    }
+  ],
+  "acuerdos": [
+    {
+      "id": "OC-2026-014",
+      "proveedor_id": "PRV-001",
+      "concepto": "Hosting y soporte cloud octubre",
+      "monto": 3200,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-019",
+      "proveedor_id": "PRV-001",
+      "concepto": "Implementación plataforma de datos",
+      "monto": 7500,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-021",
+      "proveedor_id": "PRV-003",
+      "concepto": "Transporte y bodegaje octubre",
+      "monto": 2400,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-027",
+      "proveedor_id": "PRV-003",
+      "concepto": "Bodegaje adicional octubre",
+      "monto": 4900,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-031",
+      "proveedor_id": "PRV-001",
+      "concepto": "Soporte cloud noviembre (anticipo)",
+      "monto": 3150,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-042",
+      "proveedor_id": "PRV-005",
+      "concepto": "Licencias de analítica octubre",
+      "monto": 4200,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-043",
+      "proveedor_id": "PRV-006",
+      "concepto": "Material POP campaña Q4",
+      "monto": 3600,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-044",
+      "proveedor_id": "PRV-007",
+      "concepto": "Arriendo de puestos cowork octubre",
+      "monto": 3900,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-045",
+      "proveedor_id": "PRV-008",
+      "concepto": "Migración de data warehouse, fase 1",
+      "monto": 4700,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-046",
+      "proveedor_id": "PRV-009",
+      "concepto": "Asesoría legal cierre trimestral",
+      "monto": 4500,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-047",
+      "proveedor_id": "PRV-010",
+      "concepto": "Pauta digital octubre",
+      "monto": 4800,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-048",
+      "proveedor_id": "PRV-011",
+      "concepto": "Distribución regional octubre",
+      "monto": 3300,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    },
+    {
+      "id": "OC-2026-049",
+      "proveedor_id": "PRV-012",
+      "concepto": "Desarrollo backend octubre",
+      "monto": 4000,
+      "moneda": "USD",
+      "vigente_hasta": "2026-12-31"
+    }
+  ]
+}

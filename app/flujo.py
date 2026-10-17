@@ -13,7 +13,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
-from app import config, decisor, extractor, motor, registro
+from app import ancla, config, decisor, extractor, motor, registro
 from app import mandato as mod_mandato
 from app.modelos import Decision, Documento
 
@@ -116,6 +116,11 @@ def procesar_lote(trabajo: Trabajo, docs: list[Documento], candado: threading.Lo
                                    mensaje="No se pudo leer o decidir esta factura; no se registró nada.")
     finally:
         trabajo.terminar()
+    if config.ancla_minutos() > 0:  # el lote terminó: anclar ya, sin esperar al siguiente turno
+        try:
+            ancla.anclar_cabeza()
+        except Exception as e:
+            logging.warning("anclaje tras el lote falló: %r", e)
 
 
 def repeticion() -> list[Decision]:

@@ -91,6 +91,7 @@ def anclar_cada(parar: threading.Event, segundos: float) -> None:
     while not parar.wait(segundos):
         try:
             ancla.anclar_cabeza()
+            ancla.completar_pendientes()
         except Exception as e:
             logging.warning("anclaje en OpenTimestamps falló: %r", e)
 
@@ -126,6 +127,11 @@ def procesar(doc: Documento) -> int:
     m = mod_mandato.cargar()
     hoy = config.hoy()
     return flujo.decidir_y_registrar(doc, m, hoy, flujo.preparar(doc, m, hoy), _decidiendo)[1]
+
+
+def trampas_demo() -> int:
+    casos = config.data_dir() / "casos.json"
+    return sum(1 for c in json.loads(casos.read_text(encoding="utf-8")) if c.get("trampa")) if casos.exists() else 0
 
 
 def archivos_demo() -> list[Path]:
@@ -331,6 +337,7 @@ def panel(request: Request):
     m = mod_mandato.cargar()
     return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(8),
                   integridad=registro.verificar(), anclaje=(registro.anclajes(1) or [None])[0],
+                  n_demo=len(archivos_demo()), n_trampas=trampas_demo(),
                   backend_jev=config.jev_backend(), demo_en_curso=_demo.locked(),
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 
@@ -384,7 +391,7 @@ def guardar_limites(request: Request, pin: str = Form(...), tope_por_pago: Decim
 
 @app.get("/bandeja", response_class=HTMLResponse, include_in_schema=False)
 def bandeja(request: Request):
-    return render(request, "bandeja.html", decisiones=registro.listar(100), n_demo=len(archivos_demo()),
+    return render(request, "bandeja.html", decisiones=registro.listar(100), n_demo=len(archivos_demo()), n_trampas=trampas_demo(),
                   demo_en_curso=_demo.locked())
 
 

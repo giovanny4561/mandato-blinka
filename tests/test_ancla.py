@@ -60,3 +60,33 @@ def test_api_de_anclajes(calendarios):
         ots = c.get(lista[0]["prueba"]).content
         assert ots.startswith(ancla.MAGIA) and hashlib.sha256(archivo).digest() in ots
         assert "Anclada en Bitcoin" in c.get("/").text
+
+
+BLOQUE = 967123
+CONFIRMADA = b"\xf0\x02zz\x08\x00" + ancla.BITCOIN + bytes([3]) + bytes([0xd3, 0x83, 0x3b])  # altura 967123 en varuint
+
+
+def test_completar_cambia_la_rama_pendiente_por_la_confirmada(calendarios, monkeypatch):
+    pedidos = []
+
+    def get(url, **kw):
+        pedidos.append(url)
+        return httpx.Response(200, content=CONFIRMADA, request=httpx.Request("GET", url))
+    monkeypatch.setattr(ancla.httpx, "get", get)
+    ots, _ = ancla.sellar(b"cabeza")
+    nuevo, bloque = ancla.completar(ots)
+    assert bloque == BLOQUE and nuevo.count(CONFIRMADA) == 3 and ancla.PENDIENTE not in nuevo
+    commit = hashlib.sha256(hashlib.sha256(b"cabeza").digest() + b"abcd").hexdigest()  # append "abcd" y sha256
+    assert pedidos[0] == f"{URI.decode()}/timestamp/{commit}"
+    assert ancla.completar(nuevo) == (nuevo, BLOQUE)  # ya confirmada: no cambia
+
+
+def test_completar_pendientes_guarda_el_bloque_y_respeta_lo_que_sigue_pendiente(calendarios, monkeypatch):
+    registro.insertar(hacer_decision())
+    a = ancla.anclar_cabeza()
+    monkeypatch.setattr(ancla.httpx, "get", lambda url, **kw: httpx.Response(404, request=httpx.Request("GET", url)))
+    assert ancla.completar_pendientes() == 0 and registro.anclaje(a["id"])["bloque"] is None
+    monkeypatch.setattr(ancla.httpx, "get", lambda url, **kw: httpx.Response(200, content=CONFIRMADA, request=httpx.Request("GET", url)))
+    assert ancla.completar_pendientes() == 1 and registro.anclaje(a["id"])["bloque"] == BLOQUE
+    with TestClient(app) as c:
+        assert f"confirmada en el bloque {BLOQUE}" in c.get("/").text
