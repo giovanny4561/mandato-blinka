@@ -101,7 +101,7 @@ periodo, tolerancias de conciliación, acuerdos vigentes y umbrales de JEV. Se e
 | R09 | Conciliación con la orden de compra (tolerancia) | ESCALAR |
 | R10 | Fraccionamiento para quedar bajo el umbral | ESCALAR |
 | R11 | Fechas (vencida, futura, incoherente) | ESCALAR |
-| R12 | Las dos extracciones coinciden | ESCALAR |
+| R12 | Las dos extracciones coinciden y la cuenta, la identificación, el número y el monto aparecen en el texto del documento (en imágenes solo se exige la coincidencia) | ESCALAR |
 | R13 | Dominio del remitente (correo) | ESCALAR |
 | J01 | JEV: instrucciones ocultas para el sistema | **FRENAR** |
 | J02 | JEV: no parece una factura | ESCALAR |
@@ -188,6 +188,10 @@ infla el monto y un correo que "corrige" el número (`data/inyecciones.json`, `s
   frenan las 10 (R02 cuenta contra el maestro, R04/R05 duplicados y reemisiones, R08 umbral, R09 acuerdo).
 - La técnica de medir "engañó al modelo" por separado de "terminó en pago" viene de
   [PRAETOR](https://github.com/adityasinghin01-hash/praetor) (Apache-2.0); los textos de ataque son propios.
+- También de PRAETOR: el valor anclado. R12 escala si el extractor reporta una cuenta, identificación, número o
+  monto que no aparece en el texto del documento. Protege contra valores inventados por el modelo, no contra una
+  inyección que escribe el valor falso en la propia factura (para eso están R02, R09 y JEV). Repetido sobre las 24
+  extracciones reales guardadas, no escaló ninguna de más.
 
 ## Registro sellado
 

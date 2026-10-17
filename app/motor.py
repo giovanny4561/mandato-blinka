@@ -68,7 +68,7 @@ def decidir(doc: Documento, mandato: Mandato, *, extraer: Callable[[Documento], 
     acuerdo = acuerdo_por(extraccion.referencia_acuerdo, proveedor.id, mandato, hoy) if proveedor else None
     jev = preguntar(estado_para_jev(doc, extraccion, acuerdo, proveedor, hoy)) if preguntar else None
     reglas = evaluar(extraccion, mandato, historial, canal=doc.canal, remitente=doc.remitente, consistente=consistente,
-                     hoy=hoy, jev=jev, factura_hash=doc.hash)
+                     hoy=hoy, jev=jev, factura_hash=doc.hash, texto=doc.texto)
     decision, decisiva = consolidar(reglas)
     fecha_pago = None
     if decision == "PAGAR":

@@ -297,7 +297,7 @@ PAGAR es lo que queda cuando todas devuelven OK.
 | R09 | Conciliación con lo acordado | ESCALAR | si hay `referencia_acuerdo` o el proveedor tiene acuerdo vigente: diferencia de monto > tolerancia (máx entre pct y abs) o concepto no coincide (JEV `matches_agreement`); si `monto_total` ≥ `exigir_acuerdo_desde` y no hay acuerdo → ESCALAR |
 | R10 | Fraccionamiento | ESCALAR | suma de facturas del mismo proveedor en `ventana_fraccionamiento_dias` (incluida esta) > `umbral_aprobacion_humana` mientras cada una está por debajo |
 | R11 | Fechas | ESCALAR | emisión > vencimiento; vencida hace > 60 días; emisión en el futuro |
-| R12 | Extracción consistente | ESCALAR | `consistente=False` (pasadas A y B difieren) |
+| R12 | Extracción consistente y anclada | ESCALAR | `consistente=False` (pasadas A y B difieren) o cuenta, tax id, número o monto ausentes del texto del documento (se abstiene sin texto) |
 | R13 | Remitente | ESCALAR | canal correo y dominio del remitente ≠ `proveedor.dominio_correo` |
 | J01 | JEV: instrucciones ocultas | **FRENAR** | `hidden_instructions` ≥ `instrucciones_ocultas_frenar` |
 | J02 | JEV: no parece factura | ESCALAR | `is_invoice` < `no_es_factura_escalar` |

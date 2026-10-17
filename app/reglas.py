@@ -29,7 +29,7 @@ NOMBRES = {
     "R09": "Conciliación con lo acordado",
     "R10": "Fraccionamiento",
     "R11": "Fechas",
-    "R12": "Extracción consistente",
+    "R12": "Extracción consistente y anclada",
     "R13": "Remitente",
     "J01": "JEV: instrucciones ocultas",
     "J02": "JEV: no parece factura",
@@ -247,11 +247,34 @@ def _r11(e: Extraccion, hoy: date) -> ResultadoRegla:
     return _r("R11", **ev)
 
 
-def _r12(consistente: bool) -> ResultadoRegla:
-    if consistente:
-        return _r("R12", consistente=True)
-    return _r("R12", "ESCALAR", "Las dos pasadas de extracción (modelos A y B) no coinciden en proveedor, monto o cuenta",
-              consistente=False)
+_CAMPOS_ANCLA = {"cuenta_destino": "la cuenta", "proveedor_tax_id": "la identificación del proveedor",
+                 "numero_factura": "el número de factura", "monto_total": "el monto"}
+
+
+def no_anclados(e: Extraccion, texto: str | None) -> list[str]:
+    """Campos de pago que el extractor reporta y no aparecen en el texto del documento (valor anclado, idea de PRAETOR)."""
+    if not (texto or "").strip():
+        return []  # imagen o PDF escaneado: no hay texto contra el cual comparar
+    plano = alfanumerico(texto)
+    faltan = [c for c in ("cuenta_destino", "proveedor_tax_id", "numero_factura")
+              if getattr(e, c) and alfanumerico(getattr(e, c)) not in plano]
+    if e.monto_total is not None:
+        # shortcut: busca los dígitos del monto como subcadena ("3.200,00" → "320000"); "3200" también calza en "13200"
+        centavos = f"{e.monto_total:.2f}".replace(".", "")
+        entero = str(int(e.monto_total)) if e.monto_total == int(e.monto_total) else None
+        if centavos not in plano and (entero is None or entero not in plano):
+            faltan.append("monto_total")
+    return faltan
+
+
+def _r12(consistente: bool, e: Extraccion, texto: str | None) -> ResultadoRegla:
+    if not consistente:
+        return _r("R12", "ESCALAR", "Las dos pasadas de extracción (modelos A y B) no coinciden en proveedor, monto o cuenta",
+                  consistente=False)
+    if faltan := no_anclados(e, texto):
+        return _r("R12", "ESCALAR", f"El extractor reporta {' y '.join(_CAMPOS_ANCLA[c] for c in faltan)}, pero ese valor "
+                  "no aparece en el documento; una persona debe revisarlo", no_anclados=faltan)
+    return _r("R12", consistente=True, anclado=bool((texto or "").strip()))
 
 
 def _r13(canal: str, remitente: str | None, prov: Proveedor) -> ResultadoRegla:
@@ -329,7 +352,7 @@ def _j04(jev, u: UmbralesJEV, e: Extraccion) -> ResultadoRegla:
 
 def evaluar(extraccion: Extraccion, mandato: Mandato, historial: list[EntradaHistorial], *, canal: str,
             remitente: str | None, consistente: bool, hoy: date, jev: RespuestasJEV | None,
-            factura_hash: str) -> list[ResultadoRegla]:
+            factura_hash: str, texto: str | None = None) -> list[ResultadoRegla]:
     """Siempre las 18 reglas, en el orden de `ORDEN`. Las que no pueden juzgar devuelven OK con `omitida`."""
     e, m, lim = extraccion, mandato, mandato.limites
     r00 = _r00(e)
@@ -361,7 +384,7 @@ def evaluar(extraccion: Extraccion, mandato: Mandato, historial: list[EntradaHis
         con_prov("R09", lambda: _r09(e, m.conciliacion, prov, acuerdo, historial)),
         con_prov("R10", lambda: con_monto("R10", lambda: _r10(e, lim, prov, historial, hoy))),
         _r11(e, hoy),
-        _r12(consistente),
+        _r12(consistente, e, texto),
         con_prov("R13", lambda: _r13(canal, remitente, prov)),
         _j01(jev, m.umbrales_jev),
         _j02(jev, m.umbrales_jev),

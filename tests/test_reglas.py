@@ -216,3 +216,26 @@ def test_r05_reemision_con_sufijo_sin_ventana(m):
     r2 = {x.regla_id: x for x in reglas.evaluar(otra, m, [previa], canal="pdf", remitente=None, consistente=True,
                                                  hoy=date(2026, 10, 17), jev=None, factura_hash="otro")}
     assert r2["R05"].veredicto == "OK"  # número distinto de verdad, fuera de la ventana: no es reemisión
+
+
+# ---------- R12: valor anclado al documento ----------
+
+TEXTO_F01 = """FACTURA NA-2026-0917 · Nube Andina SAS · NIT 901.234.567-8
+Total a pagar: USD 3.200,00 · Bancolombia, cuenta 0310-0190-193 · OC-2026-014"""
+
+
+def test_r12_valores_anclados_pasan_con_cualquier_formato():
+    assert reglas.no_anclados(hacer_extraccion(), TEXTO_F01) == []
+    assert reglas.no_anclados(hacer_extraccion(), TEXTO_F01.replace("3.200,00", "3,200.00")) == []
+    assert reglas.no_anclados(hacer_extraccion(monto_total=Decimal("1250.50")), "Total USD 1.250,50") == ["cuenta_destino",
+        "proveedor_tax_id", "numero_factura"]
+
+
+def test_r12_valor_inventado_escala_y_una_imagen_se_abstiene(m):
+    inventada = hacer_extraccion(cuenta_destino="03100190199", monto_total=Decimal("3900"))
+    assert reglas.no_anclados(inventada, TEXTO_F01) == ["cuenta_destino", "monto_total"]
+    r12 = next(r for r in reglas.evaluar(inventada, m, [], canal="pdf", remitente=None, consistente=True,
+                                         hoy=date(2026, 10, 17), jev=None, factura_hash="h", texto=TEXTO_F01)
+               if r.regla_id == "R12")
+    assert r12.veredicto == "ESCALAR" and "la cuenta y el monto" in r12.mensaje
+    assert reglas.no_anclados(inventada, None) == [] and reglas.no_anclados(inventada, "  ") == []

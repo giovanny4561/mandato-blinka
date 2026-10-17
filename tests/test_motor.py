@@ -7,7 +7,7 @@ from app.modelos import Documento, ResultadoRegla
 from tests.conftest import hacer_extraccion
 from tests.test_reglas import HOY, jev
 
-DOC = Documento(nombre="F01_nube_andina_oct.pdf", canal="pdf", texto="FACTURA NA-2026-0917 ...", hash="hash-f01")
+DOC = Documento(nombre="F01_nube_andina_oct.pdf", canal="pdf", texto="FACTURA NA-2026-0917 · NIT 901.234.567-8 · Total USD 3.200,00 · cuenta 0310-0190-193", hash="hash-f01")
 
 
 def regla(id_, veredicto):
