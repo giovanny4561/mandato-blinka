@@ -16,6 +16,7 @@ dependencies = [
   "pillow>=10.4",
   "python-dotenv>=1.0",
   "psycopg[binary]>=3.2",
+  "cryptography>=43",
 ]
 
 [dependency-groups]

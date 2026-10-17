@@ -50,6 +50,11 @@ def hoy() -> date:
     return date.fromisoformat(v) if v else date.today()
 
 
+def sello_llave() -> str:
+    """Llave privada Ed25519 en base64 (32 bytes) para firmar la cabeza del registro. Vacía: se usa DATA_DIR/sello.key."""
+    return os.getenv("SELLO_LLAVE", "")
+
+
 def openrouter_key() -> str:
     return os.getenv("OPENROUTER_API_KEY", "")
 

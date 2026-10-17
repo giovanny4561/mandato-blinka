@@ -32,7 +32,7 @@ Diseño completo: `docs/SDD.md`. Playbook de JEV: `docs/PLAYBOOK-JEV.md`.
 
 ## API para agentes
 - Esquema: `/openapi.json` (interactivo en `/docs`). Resumen para modelos: `/llms.txt`.
-- Lectura sin PIN: `GET /api/metricas`, `GET /api/decisiones`, `GET /api/repeticion` (SSE), `GET /health`.
+- Lectura sin PIN: `GET /api/metricas`, `GET /api/decisiones`, `GET /api/integridad` (cadena de hashes + cabeza firmada Ed25519), `GET /api/repeticion` (SSE), `GET /health`.
 - Escritura con PIN (campo de formulario `pin`): `POST /api/procesar`, `POST /api/trabajos` (+ `GET /api/trabajos/{id}/eventos`, SSE).
 - Las respuestas enmascaran cuenta e identificación tributaria.
 

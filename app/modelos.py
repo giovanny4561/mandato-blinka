@@ -202,3 +202,4 @@ class Decision(BaseModel):
     nota: str | None = None
     costo_usd: float = 0.0
     latencia_ms: int = 0
+    sello: str | None = None  # hash de la fila en el registro sellado; lo pone registro.insertar

@@ -15,7 +15,7 @@
   {{ estado(d) }}
   <h2 id="t-por-que" class="veredicto__titulo">Por qué</h2>
   <p class="veredicto__texto">{{ d.explicacion|sin_veredicto }}</p>
-  <p class="veredicto__meta">Decidido por {{ 'el agente' if d.decidido_por == 'agente' else 'una persona' }}{% if d.referencia_a %}, resuelve la escalada <a class="enlace" href="/decisiones/{{ d.referencia_a }}">#{{ d.referencia_a }}</a>{% endif %} · mandato <code>{{ d.mandato_hash }}</code> · {{ d.latencia_ms|num(0) }} ms · US$ {{ d.costo_usd|num(4) }}</p>
+  <p class="veredicto__meta">Decidido por {{ 'el agente' if d.decidido_por == 'agente' else 'una persona' }}{% if d.referencia_a %}, resuelve la escalada <a class="enlace" href="/decisiones/{{ d.referencia_a }}">#{{ d.referencia_a }}</a>{% endif %} · mandato <code>{{ d.mandato_hash }}</code> ·{% if d.sello %} sello <code title="{{ d.sello }}">{{ d.sello[:12] }}</code> ·{% endif %} {{ d.latencia_ms|num(0) }} ms · US$ {{ d.costo_usd|num(4) }}</p>
   {% if d.decision == 'ESCALAR' and d.decidido_por == 'agente' and not acciones %}
   <a class="boton boton--chico" href="/pendientes#p-{{ d.id }}">Resolver en pendientes</a>
   {% endif %}

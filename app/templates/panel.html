@@ -36,6 +36,20 @@
     </div>
   </div>
 
+  {% set s = integridad %}
+  <div class="invariante {{ '' if s.integro else 'invariante--rota' }}">
+    {{ icono('candado', 'invariante__icono') }}
+    <div>
+      {% if s.integro %}
+      <p class="invariante__titulo">Registro íntegro</p>
+      <p class="invariante__texto">Las <span class="cifra">{{ s.filas }}</span> filas están encadenadas por hash: cambiar o borrar una rompe la cadena desde ese punto. Cabeza <code>{{ s.cabeza.hash[:12] }}</code>, firmada con Ed25519 en <a class="enlace" href="/api/integridad">/api/integridad</a>.</p>
+      {% else %}
+      <p class="invariante__titulo">Registro alterado en la fila <a class="enlace" href="/decisiones/{{ s.alterada_en }}">#{{ s.alterada_en }}</a></p>
+      <p class="invariante__texto">Esa fila ya no coincide con su hash o con el de la anterior. Alguien editó o borró una decisión por fuera de la app.</p>
+      {% endif %}
+    </div>
+  </div>
+
   <dl class="datos">
     <div><dt>Costo del set</dt><dd>US$ {{ m.costo_total_usd|num(4) }}</dd></div>
     <div><dt>Por factura</dt><dd>US$ {{ m.costo_por_factura_usd|num(4) }}</dd></div>

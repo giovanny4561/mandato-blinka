@@ -136,11 +136,11 @@ El `Dockerfile` arranca `uvicorn` con 2 workers; el procesamiento de la carpeta 
 ### Pantallas
 
 - `/` panel con métricas en vivo y últimas decisiones
-- `/mandato` ver y editar el mandato (JSON validado, PIN)
+- `/mandato` reglas de pago en un formulario (tope, aprobación humana, presupuesto, acuerdo exigido y tolerancia) y el mandato completo en JSON como edición avanzada; las dos vías validan todo y piden PIN
 - `/bandeja` subir una factura o procesar la carpeta demo (con PIN)
 - `/decisiones` y `/decisiones/{id}` registro y detalle: extracción, 18 controles, probabilidades de JEV, acciones humanas
 - `/pendientes` aprobar o rechazar escaladas con PIN
-- `/api/metricas`, `/api/decisiones`, `POST /api/procesar` (multipart) y `/health`
+- `/api/metricas`, `/api/decisiones`, `/api/integridad`, `POST /api/procesar` (multipart) y `/health`
 
 ---
 
@@ -188,6 +188,38 @@ infla el monto y un correo que "corrige" el número (`data/inyecciones.json`, `s
   frenan las 10 (R02 cuenta contra el maestro, R04/R05 duplicados y reemisiones, R08 umbral, R09 acuerdo).
 - La técnica de medir "engañó al modelo" por separado de "terminó en pago" viene de
   [PRAETOR](https://github.com/adityasinghin01-hash/praetor) (Apache-2.0); los textos de ataque son propios.
+
+## Registro sellado
+
+El registro solo admite inserciones, y además cada fila queda encadenada a la anterior:
+
+- `hash_previo` guarda el `hash` de la fila anterior (la primera apunta a 64 ceros).
+- `hash` es el sha256 de ese previo más las 26 columnas de la fila en JSON canónico.
+- Un índice único sobre `hash_previo` impide que dos filas cuelguen de la misma, y cada inserción toma
+  un candado (`BEGIN IMMEDIATE` en SQLite, `pg_advisory_xact_lock` en Postgres) para que la cadena no se bifurque.
+
+Si alguien edita un monto o borra una decisión directamente en la base, la cadena se rompe en esa fila. El panel
+lo recalcula en cada carga ("Registro íntegro" o "Registro alterado en la fila #N") y `GET /api/integridad`
+devuelve el resultado junto con la cabeza (`id` y `hash` de la última fila) firmada con Ed25519, el mensaje exacto
+que se firmó y la llave pública. Cada decisión expone su `sello` en `/api/decisiones` y en su detalle.
+
+Un auditor guarda la cabeza firmada de hoy y mañana comprueba que la fila con ese `id` conserva ese `hash`.
+Así detecta que alguien reescribió la historia aunque haya recalculado toda la cadena:
+
+```python
+import base64, httpx
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+f = httpx.get("https://mandato-production.up.railway.app/api/integridad").json()["firma"]
+Ed25519PublicKey.from_public_bytes(base64.b64decode(f["llave_publica"])).verify(
+    base64.b64decode(f["firma"]), f["mensaje"].encode())  # lanza InvalidSignature si no coincide
+```
+
+La llave privada sale de `SELLO_LLAVE` (base64 de 32 bytes). Si no está definida, la app crea `DATA_DIR/sello.key`,
+que cambia si el disco se borra. Límite conocido: quien tenga a la vez la base y la llave puede reescribir y volver a
+firmar. Para cubrir ese caso, el siguiente paso es anclar la cabeza en Bitcoin con OpenTimestamps (gratis, sin billetera).
+Las bases creadas antes del sellado se migran solas: al abrirlas, la app agrega las dos columnas y sella las filas viejas
+en orden de `id`.
 
 ## Seguridad y límites conocidos
 

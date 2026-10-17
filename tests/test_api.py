@@ -16,6 +16,19 @@ def test_panel_vacio_renderiza():
         assert r.status_code == 200 and "Mandato" in r.text and "Todavía no hay decisiones" in r.text
 
 
+def test_api_integridad_y_panel():
+    registro.insertar(hacer_decision())
+    with TestClient(app) as c:
+        j = c.get("/api/integridad").json()
+        assert j["integro"] and j["filas"] == 1 and j["firma"]["algoritmo"] == "Ed25519"
+        assert c.get("/api/decisiones").json()[0]["sello"] == j["cabeza"]["hash"]
+        assert "Registro íntegro" in c.get("/").text
+        with registro.conectar() as con:
+            con.execute("UPDATE decisiones SET decision = 'FRENAR'")
+        assert c.get("/api/integridad").json()["firma"] is None
+        assert "Registro alterado en la fila" in c.get("/").text
+
+
 def test_api_metricas_y_decisiones():
     registro.insertar(hacer_decision())
     with TestClient(app) as c:

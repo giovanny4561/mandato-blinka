@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import config, decisor, documentos, extractor, flujo, motor, registro
+from app import config, decisor, documentos, extractor, firma, flujo, motor, registro
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -166,6 +166,13 @@ def api_metricas():
     return registro.metricas()
 
 
+@app.get("/api/integridad", operation_id="integridad",
+         summary="Verifica la cadena de hashes del registro y firma su cabeza con Ed25519")
+def api_integridad():
+    v = registro.verificar()
+    return v | {"firma": firma.firmar_cabeza(v["cabeza"]) if v["cabeza"] else None}
+
+
 @app.get("/api/decisiones", operation_id="decisiones", summary="Registro de decisiones con controles, JEV y explicación (cuentas enmascaradas)")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
@@ -250,6 +257,7 @@ async def leer_subida(archivo: UploadFile) -> Documento:
 def panel(request: Request):
     m = mod_mandato.cargar()
     return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(8),
+                  integridad=registro.verificar(),
                   backend_jev=config.jev_backend(), demo_en_curso=_demo.locked(),
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 

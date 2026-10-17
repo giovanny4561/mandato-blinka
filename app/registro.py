@@ -2,9 +2,14 @@
 
 No hay UPDATE ni DELETE en la app. Una acción humana sobre una escalada es una fila nueva
 (`decidido_por="humano"`, `referencia_a=<id de la escalada>`). `reiniciar()` existe solo para scripts.
+
+Registro sellado: cada fila guarda `hash_previo` (el `hash` de la fila anterior) y su propio `hash`,
+sha256 de ese previo más sus 26 columnas en JSON canónico. Editar o borrar una fila rompe la cadena
+desde ese punto y `verificar()` dice dónde.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import sqlite3
@@ -43,7 +48,9 @@ CREATE TABLE IF NOT EXISTS decisiones (
   referencia_a INTEGER REFERENCES decisiones(id),
   nota TEXT,
   costo_usd {REAL} NOT NULL DEFAULT 0,
-  latencia_ms INTEGER NOT NULL DEFAULT 0
+  latencia_ms INTEGER NOT NULL DEFAULT 0,
+  hash_previo TEXT,
+  hash TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_decisiones_prov ON decisiones(proveedor_id, numero_factura);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_decisiones_ref ON decisiones(referencia_a) WHERE referencia_a IS NOT NULL;
@@ -57,6 +64,10 @@ COLUMNAS = (
     "decision, regla_decisiva, explicacion, riel_sugerido, fecha_pago_programada, mandato_hash, "
     "decidido_por, referencia_a, nota, costo_usd, latencia_ms"
 )
+
+CAMPOS = [c.strip() for c in COLUMNAS.split(",")]
+_REALES = {"monto_total", "costo_usd"}
+GENESIS = "0" * 64
 
 Destino = str | Path | None
 _inicializados: set[str] = set()
@@ -107,9 +118,43 @@ def conectar(db: Destino = None) -> _Con:
     if clave not in _inicializados:
         for sentencia in filter(str.strip, esquema.split(";")):
             con.execute(sentencia)
+        _migrar(con)
         con.raw.commit()
         _inicializados.add(clave)
     return con
+
+
+def sello(previo: str, fila) -> str:
+    """sha256 del hash previo más las 26 columnas en JSON canónico. Mismo cálculo al insertar y al verificar."""
+    valores = [float(fila[c]) if c in _REALES and fila[c] is not None else fila[c] for c in CAMPOS]
+    return hashlib.sha256(json.dumps([previo, valores], ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+
+def _bloquear(con: _Con) -> None:
+    """Serializa las inserciones (también entre procesos) para que dos filas nunca encadenen al mismo previo."""
+    con.execute("SELECT pg_advisory_xact_lock(4021)" if con.pg else "BEGIN IMMEDIATE")
+
+
+def _migrar(con: _Con) -> None:
+    """Bases creadas antes del sellado: agrega las columnas y sella las filas viejas en orden de id, una vez."""
+    if con.pg:
+        for c in ("hash_previo", "hash"):
+            con.execute(f"ALTER TABLE decisiones ADD COLUMN IF NOT EXISTS {c} TEXT")
+    else:
+        existentes = {r["name"] for r in con.execute("PRAGMA table_info(decisiones)")}
+        for c in {"hash_previo", "hash"} - existentes:
+            con.execute(f"ALTER TABLE decisiones ADD COLUMN {c} TEXT")
+    con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_decisiones_previo ON decisiones(hash_previo)")
+    if not con.execute("SELECT 1 FROM decisiones WHERE hash IS NULL LIMIT 1").fetchone():
+        return
+    previo = GENESIS
+    for r in con.execute("SELECT * FROM decisiones ORDER BY id").fetchall():
+        if r["hash"] is None:
+            h = sello(previo, r)
+            con.execute("UPDATE decisiones SET hash_previo = ?, hash = ? WHERE id = ?", (previo, h, r["id"]))
+            previo = h
+        else:
+            previo = r["hash"]
 
 
 def _iso(d: date | None) -> str | None:
@@ -126,11 +171,15 @@ def insertar(d: Decision, db: Destino = None) -> int:
         json.dumps([r.model_dump() for r in d.reglas], ensure_ascii=False),
         d.jev.model_dump_json() if d.jev else None,
         d.decision, d.regla_decisiva, d.explicacion, d.riel_sugerido, _iso(d.fecha_pago_programada),
-        d.mandato_hash, d.decidido_por, d.referencia_a, d.nota, d.costo_usd, d.latencia_ms,
+        d.mandato_hash, d.decidido_por, d.referencia_a, d.nota, float(d.costo_usd), d.latencia_ms,
     )
-    marcas = ",".join("?" * len(valores))
-    sql = f"INSERT INTO decisiones ({COLUMNAS}) VALUES ({marcas})"
+    marcas = ",".join("?" * (len(valores) + 2))
+    sql = f"INSERT INTO decisiones ({COLUMNAS}, hash_previo, hash) VALUES ({marcas})"
     with conectar(db) as con:
+        _bloquear(con)
+        ultima = con.execute("SELECT hash FROM decisiones ORDER BY id DESC LIMIT 1").fetchone()
+        previo = ultima["hash"] if ultima else GENESIS
+        valores += (previo, sello(previo, dict(zip(CAMPOS, valores))))
         if con.pg:
             return int(con.execute(sql + " RETURNING id", valores).fetchone()["id"])
         return int(con.execute(sql, valores).lastrowid)
@@ -147,7 +196,7 @@ def _a_decision(r) -> Decision:
         riel_sugerido=r["riel_sugerido"],
         fecha_pago_programada=date.fromisoformat(r["fecha_pago_programada"]) if r["fecha_pago_programada"] else None,
         mandato_hash=r["mandato_hash"], decidido_por=r["decidido_por"], referencia_a=r["referencia_a"],
-        nota=r["nota"], costo_usd=r["costo_usd"], latencia_ms=r["latencia_ms"],
+        nota=r["nota"], costo_usd=r["costo_usd"], latencia_ms=r["latencia_ms"], sello=r["hash"],
     )
 
 
@@ -200,6 +249,19 @@ def resolver(id_escalada: int, aprobar: bool, nota: str, db: Destino = None) -> 
         if "ux_decisiones_ref" in str(e) or "UNIQUE" in str(e).upper():
             raise ValueError("esta escalada ya fue resuelta") from e
         raise
+
+
+def verificar(db: Destino = None) -> dict:
+    """Recorre la cadena: cada fila debe apuntar al hash de la anterior y su hash debe recalcularse igual."""
+    with conectar(db) as con:
+        filas = con.execute("SELECT * FROM decisiones ORDER BY id").fetchall()
+    previo = GENESIS
+    for r in filas:
+        if r["hash_previo"] != previo or sello(previo, r) != r["hash"]:
+            return {"integro": False, "filas": len(filas), "alterada_en": r["id"], "cabeza": None}
+        previo = r["hash"]
+    cabeza = {"id": filas[-1]["id"], "hash": previo} if filas else None
+    return {"integro": True, "filas": len(filas), "alterada_en": None, "cabeza": cabeza}
 
 
 def historial(db: Destino = None) -> list[EntradaHistorial]:
@@ -265,6 +327,7 @@ def sembrar_si_vacia(semilla: Path, db: Destino = None) -> bool:
             if con.execute("SELECT COUNT(*) AS n FROM decisiones").fetchone()["n"] > 0:
                 return False
     shutil.copyfile(semilla, destino)
+    _inicializados.discard(str(destino))  # la semilla puede venir sin las columnas del sello: migrar al abrirla
     return True
 
 

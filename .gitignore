@@ -20,3 +20,5 @@ ruvector.db
 *.db-shm
 carga/salida/
 carga/facturas/
+data/sello.key
+*.key

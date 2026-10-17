@@ -111,6 +111,7 @@ p { margin: 0; }
 .invariante__icono { width: 26px; height: 26px; color: var(--verde); stroke-width: 1.6; margin-top: 2px; }
 .invariante__titulo { font-size: 1.125rem; font-weight: 520; letter-spacing: -0.015em; }
 .invariante__texto { color: var(--tinta-2); font-size: .875rem; }
+.invariante + .invariante { margin-top: 10px; }
 .invariante--rota { background: var(--rojo-suave); } .invariante--rota .invariante__icono { color: var(--rojo); }
 .datos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding-top: 18px; border-top: 1px solid var(--linea); }
 .datos dt { color: var(--tinta-2); font-size: .8125rem; }
