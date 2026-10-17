@@ -115,7 +115,7 @@ def test_demo_procesa_en_segundo_plano(simulados, entorno):
         assert "2 facturas" in c.get("/bandeja").text
         assert c.post("/bandeja/demo", data={"pin": "nope"}).status_code == 403
         r = c.post("/bandeja/demo", data={"pin": "123456"}, follow_redirects=False)
-        assert r.status_code == 303 and r.headers["location"].startswith("/en-vivo?t=")
+        assert r.status_code == 303 and r.headers["location"].startswith("/?t=")
         assert registro.metricas()["total"] == 2  # TestClient ejecuta las tareas de fondo al responder
 
 
@@ -188,7 +188,7 @@ def test_varias_facturas_en_una_subida(simulados):
         cuerpo = c.get(f"/api/trabajos/{tid}/eventos").text
         assert cuerpo.count('"decidida"') == 2 and registro.metricas()["total"] == 2
         r = c.post("/bandeja", files=dos, data={"pin": "123456"}, follow_redirects=False)
-        assert r.status_code == 303 and r.headers["location"].startswith("/en-vivo?t=")
+        assert r.status_code == 303 and r.headers["location"].startswith("/?t=")
         demasiadas = [("archivos", (f"F{i}.txt", CHAT, "text/plain")) for i in range(51)]
         assert c.post("/api/trabajos", files=demasiadas, data={"pin": "123456"}).status_code == 400
 
@@ -201,7 +201,7 @@ def test_repeticion_no_llama_modelos_y_respeta_el_orden(monkeypatch):
         cuerpo = c.get("/api/repeticion?ritmo=0.2").text
         decididas = [json.loads(l[6:]) for l in cuerpo.splitlines() if '"decidida"' in l]
         assert [d["decision"] for d in decididas] == ["PAGAR", "FRENAR"]
-        assert "En vivo" in c.get("/en-vivo").text
+        assert "Red de decisión" in c.get("/en-vivo").text and "Red de decisión" in c.get("/").text
 
 
 def test_legible_para_agentes():

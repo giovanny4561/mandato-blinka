@@ -137,7 +137,10 @@
       else if (ev.tipo === "leida") alLeer(ev);
       else if (ev.tipo === "decidida") { cola.push(ev); drenar(); }
       else if (ev.tipo === "error") { decididas++; leyendo = Math.max(0, leyendo - 1); progreso(); }
-      else if (ev.tipo === "fin") { fuente.close(); $("modo").textContent = modo === "Repitiendo el registro" ? "Repetición terminada" : "Terminado"; }
+      else if (ev.tipo === "fin") {
+        fuente.close(); $("modo").textContent = modo === "Repitiendo el registro" ? "Repetición terminada" : "Terminado";
+        if (modo !== "Repitiendo el registro") setTimeout(() => location.assign("/"), 2500);  // resumen y registro al día
+      }
     };
     fuente.onerror = () => { $("modo").textContent = "Conexión cerrada"; fuente.close(); };
   }
@@ -153,6 +156,12 @@
     const { trabajo } = await r.json();
     escuchar(`/api/trabajos/${trabajo}/eventos`, "Procesando en vivo");
   });
-  const inicial = document.querySelector(".vivo").dataset.trabajo;
+  const vivo = document.querySelector(".vivo");
+  const inicial = vivo.dataset.trabajo;
   if (inicial) escuchar(`/api/trabajos/${inicial}/eventos`, "Procesando en vivo");
+  else if (Number(vivo.dataset.registro) > 0 && !quieto) {  // lo primero que se ve: el registro animándose, una vez por sesión
+    let visto = false;
+    try { visto = sessionStorage.getItem("mandato-repeticion") === "1"; sessionStorage.setItem("mandato-repeticion", "1"); } catch (_) { /* sin almacenamiento: se repite */ }
+    if (!visto) setTimeout(() => escuchar("/api/repeticion", "Repitiendo el registro"), 700);
+  }
 })();

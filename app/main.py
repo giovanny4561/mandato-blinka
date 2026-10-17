@@ -399,12 +399,20 @@ async def leer_subida(archivo: UploadFile) -> Documento:
 
 # ---------- Páginas ----------
 
+_ultimo_lote: dict[str, str | None] = {"id": None}  # el set de demostración en curso, para engancharse a su animación
+
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-def panel(request: Request):
+def panel(request: Request, t: str | None = None):
+    """Portada: la red En vivo primero, luego el resumen y las últimas decisiones."""
     m = mod_mandato.cargar()
-    return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(8),
+    if not (t and flujo.obtener(t)):
+        lote = flujo.obtener(_ultimo_lote["id"] or "")
+        t = lote.id if lote and not lote.fin else None
+    return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(10),
                   integridad=registro.verificar(), anclaje=(registro.anclajes(1) or [None])[0],
-                  n_demo=len(archivos_demo()), n_trampas=trampas_demo(),
+                  n_demo=len(archivos_demo()), n_trampas=trampas_demo(), n_demo_pendientes=len(demo_pendientes()),
+                  n_registro=len(flujo.repeticion()), trabajo=t,
                   backend_jev=config.jev_backend(), demo_en_curso=_demo.locked(),
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 
@@ -472,25 +480,25 @@ async def subir(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...),
         return RedirectResponse(f"/decisiones/{await run_in_threadpool(procesar, docs[0])}", status_code=303)
     t = flujo.crear(len(docs))
     tareas.add_task(flujo.procesar_lote, t, docs, _decidiendo)
-    return RedirectResponse(f"/en-vivo?t={t.id}", status_code=303)
+    return RedirectResponse(f"/?t={t.id}#en-vivo", status_code=303)
 
 
 @app.post("/bandeja/demo", include_in_schema=False)
 def demo(tareas: BackgroundTasks, pin: str = Form(...)):
     exigir_pin(pin)
     if not _demo.acquire(blocking=False):
-        return RedirectResponse("/en-vivo", status_code=303)
+        return RedirectResponse("/#en-vivo", status_code=303)
     docs = docs_demo_pendientes()
     t = flujo.crear(len(docs))
+    _ultimo_lote["id"] = t.id
     tareas.add_task(correr_demo, t, docs)
-    return RedirectResponse(f"/en-vivo?t={t.id}", status_code=303)
+    return RedirectResponse(f"/?t={t.id}#en-vivo", status_code=303)
 
 
-@app.get("/en-vivo", response_class=HTMLResponse, include_in_schema=False)
-def en_vivo(request: Request, t: str | None = None):
-    return render(request, "en_vivo.html", trabajo=t if t and flujo.obtener(t) else None,
-                  n_registro=len(flujo.repeticion()), n_demo=len(archivos_demo()), n_demo_pendientes=len(demo_pendientes()),
-                  demo_en_curso=_demo.locked())
+@app.get("/en-vivo", include_in_schema=False)
+def en_vivo(t: str | None = None):
+    """La animación ahora abre la portada; se conserva la ruta para los enlaces viejos."""
+    return RedirectResponse(f"/?t={t}#en-vivo" if t else "/#en-vivo", status_code=307)
 
 
 @app.get("/decisiones", response_class=HTMLResponse, include_in_schema=False)

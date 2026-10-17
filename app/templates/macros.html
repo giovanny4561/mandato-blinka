@@ -14,7 +14,7 @@
     <span class="mov__chip mov__chip--{{ d.decision|lower }}">{{ icono({'PAGAR': 'check', 'ESCALAR': 'persona', 'FRENAR': 'alto'}[d.decision]) }}</span>
     <span class="mov__texto">
       <span class="mov__titulo">{{ d.extraccion.proveedor_nombre or 'Documento sin proveedor legible' }}{% if d.extraccion.numero_factura %} <span class="mov__num">{{ d.extraccion.numero_factura }}</span>{% endif %}</span>
-      <span class="mov__sub">{{ estado(d) }}<span class="sep">·</span>{% if d.regla_decisiva %}{{ d.regla_decisiva }} {{ (d.reglas|selectattr('regla_id', 'equalto', d.regla_decisiva)|first).nombre }}{% else %}{{ d.reglas|length }} controles en orden{% endif %}{% if detalle %}<span class="sep">·</span>{{ d.ts|hora }}<span class="sep">·</span>{{ d.archivo }}{% endif %}</span>
+      <span class="mov__sub">{{ estado(d) }}<span class="sep">·</span>{% if d.regla_decisiva %}{% set rd = d.reglas|selectattr('regla_id', 'equalto', d.regla_decisiva)|list %}{{ d.regla_decisiva }} {{ rd[0].nombre if rd else '' }}{% else %}{{ d.reglas|length }} controles en orden{% endif %}{% if detalle %}<span class="sep">·</span>{{ d.ts|hora }}<span class="sep">·</span>{{ d.archivo }}{% endif %}</span>
     </span>
     <span class="mov__monto">{{ d.extraccion.monto_total|monto(d.extraccion.moneda) }}</span>
   </a>
