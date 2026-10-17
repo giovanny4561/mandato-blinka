@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, FastAPI, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -76,7 +76,9 @@ async def vida(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Mandato", lifespan=vida)
+app = FastAPI(title="Mandato", lifespan=vida, version="1.0",
+              description="Agente de cuentas por pagar: decide PAGAR, ESCALAR o FRENAR facturas dentro de un mandato. "
+                          "Lectura libre; escritura con PIN de operador. Resumen para modelos en /llms.txt.")
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 
 
@@ -148,17 +150,22 @@ def consumido_mes(m: Mandato) -> float:
 
 # ---------- API ----------
 
-@app.get("/health")
+@app.get("/llms.txt", response_class=PlainTextResponse, include_in_schema=False)
+def llms_txt():
+    return (APP_DIR / "static" / "llms.txt").read_text(encoding="utf-8")
+
+
+@app.get("/health", operation_id="salud", summary="Estado del servicio")
 def health():
     return {"ok": True}
 
 
-@app.get("/api/metricas")
+@app.get("/api/metricas", operation_id="metricas", summary="Totales por decisión, autonomía, pagos fuera de reglas y costo")
 def api_metricas():
     return registro.metricas()
 
 
-@app.get("/api/decisiones")
+@app.get("/api/decisiones", operation_id="decisiones", summary="Registro de decisiones con controles, JEV y explicación (cuentas enmascaradas)")
 def api_decisiones(limite: int = Query(200, ge=1, le=500)):
     return [publico(d) for d in registro.listar(limite)]
 
@@ -216,7 +223,7 @@ async def api_repeticion(ritmo: float = Query(0.7, ge=0.2, le=3.0)):
     return StreamingResponse(fuente(), media_type="text/event-stream", headers=SSE)
 
 
-@app.post("/api/procesar")
+@app.post("/api/procesar", operation_id="procesar_factura", summary="Procesa una factura y devuelve la decisión (requiere PIN)")
 async def api_procesar(archivo: UploadFile, pin: str = Form(...)):
     exigir_pin(pin)
     doc = await leer_subida(archivo)
@@ -238,7 +245,7 @@ async def leer_subida(archivo: UploadFile) -> Documento:
 
 # ---------- Páginas ----------
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def panel(request: Request):
     m = mod_mandato.cargar()
     return render(request, "panel.html", metricas=registro.metricas(), decisiones=registro.listar(8),
@@ -246,14 +253,14 @@ def panel(request: Request):
                   empresa=m.empresa.nombre, mandato_hash=mod_mandato.hash_de(m))
 
 
-@app.get("/mandato", response_class=HTMLResponse)
+@app.get("/mandato", response_class=HTMLResponse, include_in_schema=False)
 def ver_mandato(request: Request, guardado: bool = False):
     m = mod_mandato.cargar()
     return render(request, "mandato.html", mandato=m, hash=mod_mandato.hash_de(m), consumido=consumido_mes(m),
                   json=m.model_dump_json(indent=2), error=None, guardado=guardado, mes=MESES_LARGOS[config.hoy().month - 1])
 
 
-@app.post("/mandato", response_class=HTMLResponse)
+@app.post("/mandato", response_class=HTMLResponse, include_in_schema=False)
 def guardar_mandato(request: Request, json: str = Form(...), pin: str = Form(...)):
     exigir_pin(pin)
     try:
@@ -269,20 +276,20 @@ def guardar_mandato(request: Request, json: str = Form(...), pin: str = Form(...
     return RedirectResponse("/mandato?guardado=1", status_code=303)
 
 
-@app.get("/bandeja", response_class=HTMLResponse)
+@app.get("/bandeja", response_class=HTMLResponse, include_in_schema=False)
 def bandeja(request: Request):
     return render(request, "bandeja.html", decisiones=registro.listar(100), n_demo=len(archivos_demo()),
                   demo_en_curso=_demo.locked())
 
 
-@app.post("/bandeja")
+@app.post("/bandeja", include_in_schema=False)
 async def subir(archivo: UploadFile, pin: str = Form(...)):
     exigir_pin(pin)
     doc = await leer_subida(archivo)
     return RedirectResponse(f"/decisiones/{await run_in_threadpool(procesar, doc)}", status_code=303)
 
 
-@app.post("/bandeja/demo")
+@app.post("/bandeja/demo", include_in_schema=False)
 def demo(tareas: BackgroundTasks, pin: str = Form(...)):
     exigir_pin(pin)
     if not _demo.acquire(blocking=False):
@@ -293,18 +300,18 @@ def demo(tareas: BackgroundTasks, pin: str = Form(...)):
     return RedirectResponse(f"/en-vivo?t={t.id}", status_code=303)
 
 
-@app.get("/en-vivo", response_class=HTMLResponse)
+@app.get("/en-vivo", response_class=HTMLResponse, include_in_schema=False)
 def en_vivo(request: Request, t: str | None = None):
     return render(request, "en_vivo.html", trabajo=t if t and flujo.obtener(t) else None,
                   n_registro=len(flujo.repeticion()), n_demo=len(archivos_demo()))
 
 
-@app.get("/decisiones", response_class=HTMLResponse)
+@app.get("/decisiones", response_class=HTMLResponse, include_in_schema=False)
 def decisiones(request: Request):
     return render(request, "decisiones.html", decisiones=registro.listar(500))
 
 
-@app.get("/decisiones/{id_}", response_class=HTMLResponse)
+@app.get("/decisiones/{id_}", response_class=HTMLResponse, include_in_schema=False)
 def detalle(request: Request, id_: int):
     d = registro.obtener(id_)
     if d is None:
@@ -312,12 +319,12 @@ def detalle(request: Request, id_: int):
     return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_))
 
 
-@app.get("/pendientes", response_class=HTMLResponse)
+@app.get("/pendientes", response_class=HTMLResponse, include_in_schema=False)
 def pendientes(request: Request):
     return render(request, "pendientes.html", pendientes=registro.pendientes())
 
 
-@app.post("/pendientes/{id_}/resolver")
+@app.post("/pendientes/{id_}/resolver", include_in_schema=False)
 def resolver(id_: int, accion: str = Form(...), pin: str = Form(...), nota: str = Form("")):
     exigir_pin(pin)
     if accion not in ("aprobar", "rechazar"):

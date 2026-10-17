@@ -152,3 +152,11 @@ def test_repeticion_no_llama_modelos_y_respeta_el_orden(monkeypatch):
         decididas = [json.loads(l[6:]) for l in cuerpo.splitlines() if '"decidida"' in l]
         assert [d["decision"] for d in decididas] == ["PAGAR", "FRENAR"]
         assert "En vivo" in c.get("/en-vivo").text
+
+
+def test_legible_para_agentes():
+    with TestClient(app) as c:
+        assert c.get("/llms.txt").text.startswith("# Mandato")
+        rutas = c.get("/openapi.json").json()["paths"]
+        assert "/api/metricas" in rutas and "/" not in rutas and "/pendientes" not in rutas
+        assert rutas["/api/procesar"]["post"]["operationId"] == "procesar_factura"

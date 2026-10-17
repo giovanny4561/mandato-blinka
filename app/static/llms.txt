@@ -1,0 +1,21 @@
+# Mandato
+
+> Agente de cuentas por pagar para el reto Blinka (Hackathon 30X). Lee facturas, las decide PAGAR, ESCALAR o FRENAR contra un mandato definido por la empresa y explica cada decisión citando la regla. Ninguna regla aprueba por sí sola: PAGAR exige las 18 en orden. Datos de demostración simulados.
+
+Las acciones que gastan créditos o cambian estado exigen un PIN de operador. La lectura es libre y las respuestas enmascaran cuentas e identificaciones.
+
+## API
+- [Esquema OpenAPI](/openapi.json): contrato completo de la API.
+- [Métricas](/api/metricas): totales PAGAR/ESCALAR/FRENAR, autonomía, pagos fuera de reglas (debe ser 0), costo.
+- [Decisiones](/api/decisiones): registro con extracción, 18 controles, respuestas de JEV y explicación.
+- [Repetición en vivo](/api/repeticion): stream SSE que reproduce las decisiones registradas.
+
+## Documentación
+- [Repositorio](https://github.com/giovanny4561/mandato-blinka): código, pruebas y evaluación.
+- [Diseño (SDD)](https://github.com/giovanny4561/mandato-blinka/blob/main/docs/SDD.md): reglas, contratos de datos y casos de prueba.
+- [Playbook de JEV](https://github.com/giovanny4561/mandato-blinka/blob/main/docs/PLAYBOOK-JEV.md): preguntas tipadas y umbrales.
+- [AGENTS.md](https://github.com/giovanny4561/mandato-blinka/blob/main/AGENTS.md): invariantes y mapa del código.
+
+## Optional
+- [Panel](/): vista humana con las métricas.
+- [En vivo](/en-vivo): red de decisión animada.
