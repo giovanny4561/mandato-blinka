@@ -1,0 +1,18 @@
+Mandato — Hackathon 30X Octubre 2026, reto Blinka.
+Copyright (c) 2026 Giovanny Marín. Licencia MIT (ver LICENSE).
+
+Este proyecto adapta ideas y patrones de:
+
+- anthropics/financial-services (Apache-2.0): patrón de tres niveles
+  lector aislado sin herramientas -> motor de reglas -> escalador, esquemas de
+  salida estrictos (additionalProperties: false, maxLength, pattern) y la regla
+  "ningún resultado sin cita de la regla". Adaptado, no copiado literalmente.
+- giovanny4561/payment-verifier-bot (propio): prompt de extracción con visión,
+  campo de observaciones para anomalías y la inyección de la fecha actual.
+- creditos-bot (propio): cola de propuestas pendientes que un humano confirma
+  antes de que algo quede escrito.
+- AP2 — Agentic Payment Protocol v0.2 (ap2-protocol.org, Apache-2.0): nombres de
+  los campos del mandato abierto (beneficiarios permitidos, rango de monto,
+  presupuesto por periodo).
+- TypeSafe AI — JEV / System One (docs.typesafe.ai): tipos de pregunta noul,
+  choice y score, y la guía de umbrales de confianza.

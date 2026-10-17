@@ -1,0 +1,14 @@
+.env
+.venv/
+.git/
+.swarm/
+.claude-flow/
+*.db
+*.db-wal
+*.db-shm
+data/entrantes/
+data/*.sqlite*
+.pytest_cache/
+.coverage
+htmlcov/
+__pycache__/
