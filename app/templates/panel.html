@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 {% from "macros.html" import icono, movimiento %}
-{% block titulo %}Panel · Mandato<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="/static/en_vivo.js?v={{ v }}" defer></script>
-{% endblock %}
+{% block titulo %}Panel · Mandato{% endblock %}
 {% block contenido %}
 {% set m = metricas %}
-<div class="encabezado">
+<div class="encabezado encabezado--fila">
   <h1>Panel</h1>
   <p class="bajada">{{ empresa }} · mandato <code>{{ mandato_hash }}</code></p>
 </div>
 
+{% if m.total %}
+<section class="tablero" aria-labelledby="t-resumen">
+  <div class="tablero__principal">
+    <h2 id="t-resumen" class="tablero__frase"><span class="cifra">{{ m.pagar + m.frenar }}</span> de <span class="cifra">{{ m.total }}</span> facturas decididas sin una persona <span class="tablero__pct">{{ m.autonomia_pct|pct }}</span></h2>
+    <div class="barra-decisiones" role="img" aria-label="{{ m.pagar }} pagadas, {{ m.escalar }} por revisar, {{ m.frenar }} frenadas">
+      {% if m.pagar %}<span class="seg seg--pagar" style="flex: {{ m.pagar }}"></span>{% endif %}
+      {% if m.escalar %}<span class="seg seg--escalar" style="flex: {{ m.escalar }}"></span>{% endif %}
+      {% if m.frenar %}<span class="seg seg--frenar" style="flex: {{ m.frenar }}"></span>{% endif %}
+    </div>
+  </div>
+  <dl class="tablero__cifras">
+    <div><dt><span class="punto punto--pagar"></span>Pagadas</dt><dd>{{ m.pagar }}</dd></div>
+    <div><dt><span class="punto punto--escalar"></span>Por revisar</dt><dd>{% if m.pendientes %}<a class="enlace" href="/pendientes">{{ m.escalar }}</a>{% else %}{{ m.escalar }}{% endif %}</dd></div>
+    <div><dt><span class="punto punto--frenar"></span>Frenadas</dt><dd>{{ m.frenar }}</dd></div>
+    <div class="{{ 'tablero__mal' if m.pagos_fuera_de_reglas else 'tablero__bien' }}"><dt>Pagos fuera de reglas</dt><dd>{{ m.pagos_fuera_de_reglas }}</dd></div>
+    <div class="{{ 'tablero__bien' if integridad.integro else 'tablero__mal' }}"><dt>Registro</dt><dd><a class="enlace-sutil" href="#t-garantias">{{ 'Íntegro' if integridad.integro else 'Alterado' }}{% if anclaje and integridad.integro %} · anclado{% endif %}</a></dd></div>
+    <div><dt>Costo total</dt><dd>US$ {{ m.costo_total_usd|num(3) }}</dd></div>
+  </dl>
+</section>
+{% endif %}
 
 <section class="vivo-portada" id="en-vivo" aria-labelledby="t-vivo">
   <h2 id="t-vivo" class="sr-solo">En vivo</h2>
@@ -71,22 +89,18 @@
 </section>
 
 {% if m.total %}
-<section class="resumen" aria-labelledby="t-resumen">
-  <h2 id="t-resumen" class="resumen__frase">
-    <span class="cifra">{{ m.pagar + m.frenar }}</span> de <span class="cifra">{{ m.total }}</span> facturas se decidieron sin una persona.
-    <span class="resumen__resto">{% if m.pendientes %}{{ m.pendientes }} esperan aprobación.{% else %}No hay escaladas pendientes.{% endif %}</span>
-  </h2>
-  <div class="barra-decisiones" role="img" aria-label="{{ m.pagar }} pagadas, {{ m.escalar }} escaladas, {{ m.frenar }} frenadas">
-    {% if m.pagar %}<span class="seg seg--pagar" style="flex: {{ m.pagar }}"></span>{% endif %}
-    {% if m.escalar %}<span class="seg seg--escalar" style="flex: {{ m.escalar }}"></span>{% endif %}
-    {% if m.frenar %}<span class="seg seg--frenar" style="flex: {{ m.frenar }}"></span>{% endif %}
+<section aria-labelledby="t-mov">
+  <div class="seccion-cabeza">
+    <h2 id="t-mov">Últimas decisiones</h2>
+    <a class="enlace" href="/decisiones">Ver el registro completo</a>
   </div>
-  <ul class="leyenda">
-    <li><span class="punto punto--pagar"></span>{{ m.pagar }} pagadas <span class="tenue">{{ m.pagar_pct|pct }}</span></li>
-    <li><span class="punto punto--escalar"></span>{{ m.escalar }} escaladas a una persona <span class="tenue">{{ m.escaladas_pct|pct }}</span></li>
-    <li><span class="punto punto--frenar"></span>{{ m.frenar }} frenadas <span class="tenue">{{ m.frenadas_pct|pct }}</span></li>
+  <ul class="movimientos">
+    {% for d in decisiones %}{{ movimiento(d) }}{% endfor %}
   </ul>
+</section>
 
+<section aria-labelledby="t-garantias">
+  <div class="seccion-cabeza"><h2 id="t-garantias">Garantías</h2></div>
   <div class="invariantes">
   <div class="invariante {{ 'invariante--rota' if m.pagos_fuera_de_reglas else '' }}">
     {{ icono('escudo', 'invariante__icono') }}
@@ -113,22 +127,12 @@
 
   </div>
 
-  <dl class="datos">
+  <dl class="datos datos--tarjeta">
     <div><dt>Costo del set</dt><dd>US$ {{ m.costo_total_usd|num(4) }}</dd></div>
     <div><dt>Por factura</dt><dd>US$ {{ m.costo_por_factura_usd|num(4) }}</dd></div>
     <div><dt>JEV, promedio</dt><dd>{{ (m.latencia_jev_ms / 1000)|num(1) }} s <span class="tenue">{{ 'modelo real' if (m.backend_jev or backend_jev) == 'typesafe' else 'shim sobre LLM' }}</span></dd></div>
     <div><dt>Autonomía</dt><dd>{{ m.autonomia_pct|pct }}</dd></div>
   </dl>
-</section>
-
-<section aria-labelledby="t-mov">
-  <div class="seccion-cabeza">
-    <h2 id="t-mov">Últimas decisiones</h2>
-    <a class="enlace" href="/decisiones">Ver el registro completo</a>
-  </div>
-  <ul class="movimientos">
-    {% for d in decisiones %}{{ movimiento(d) }}{% endfor %}
-  </ul>
 </section>
 {% else %}
 <section class="vacio-estado">

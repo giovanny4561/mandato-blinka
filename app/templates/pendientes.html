@@ -7,13 +7,14 @@
   <p class="bajada">El agente escaló estas facturas porque algo se sale del mandato. Si apruebas, se pagan; si rechazas, quedan frenadas. Tu acción entra al registro como una fila nueva.</p>
 </div>
 {% if pendientes %}
+<p class="tenue">Primero las de mayor riesgo según JEV.</p>
 <ul class="pendientes">
 {% for d in pendientes %}
   <li class="tarjeta pendiente" id="p-{{ d.id }}">
     <div class="pendiente__cabeza">
       <div>
         <p class="pendiente__titulo">{{ d.extraccion.proveedor_nombre or 'Documento sin proveedor legible' }} <span class="mov__num">{{ d.extraccion.numero_factura or '' }}</span></p>
-        <p class="tenue">{{ d.regla_decisiva }} · {{ d.archivo }} · <a class="enlace" href="/decisiones/{{ d.id }}">ver detalle</a></p>
+        <p class="tenue">{% set rj = riesgo_jev(d) %}{% if rj >= 0 %}<span class="riesgo {{ 'riesgo--alto' if rj >= 1.5 else '' }}">Riesgo {{ rj|num(1) }} de 3 según JEV</span> · {% endif %}{{ d.regla_decisiva }} · {{ d.archivo }} · <a class="enlace" href="/decisiones/{{ d.id }}">ver detalle</a></p>
       </div>
       <p class="pendiente__monto">{{ d.extraccion.monto_total|monto(d.extraccion.moneda) }}</p>
     </div>

@@ -66,6 +66,7 @@ plantillas.env.filters["monto"] = monto_html
 plantillas.env.filters["pct"] = lambda v: f"{num_es(v, 1)} %"
 plantillas.env.filters["hora"] = hora_local
 plantillas.env.filters["riel"] = lambda p: rieles.etiqueta(p)
+plantillas.env.globals["riesgo_jev"] = lambda d: riesgo_jev(d)
 plantillas.env.filters["enmascarar"] = lambda v: f"****{str(v)[-4:]}" if v else "—"
 plantillas.env.filters["sin_veredicto"] = lambda t: re.sub(r"^(PAGAR|ESCALAR|FRENAR) · ", "", t or "")
 plantillas.env.globals["n_pendientes"] = lambda: len(registro.pendientes())
@@ -517,7 +518,13 @@ def detalle(request: Request, id_: int):
 
 @app.get("/pendientes", response_class=HTMLResponse, include_in_schema=False)
 def pendientes(request: Request):
-    return render(request, "pendientes.html", pendientes=registro.pendientes())
+    return render(request, "pendientes.html", pendientes=sorted(registro.pendientes(), key=lambda d: (-riesgo_jev(d), d.id)))
+
+
+def riesgo_jev(d) -> float:
+    """Riesgo del pago según JEV (0 a 3); -1 si no hay. Ordena la cola: lo más riesgoso lo ve primero una persona."""
+    r = d.jev.respuestas.get("payment_risk") if d.jev else None
+    return r.valor if r is not None and r.valor is not None else -1
 
 
 @app.post("/pendientes/{id_}/resolver", include_in_schema=False)
