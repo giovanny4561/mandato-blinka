@@ -12,6 +12,7 @@ Las acciones que gastan créditos o cambian estado exigen un PIN de operador. La
 - Orden x402: `/api/decisiones/{id}/x402` devuelve, para una decisión PAGAR en USDC, el PaymentPayload x402 v2 sin firmar (simulado; no mueve dinero).
 - [Anclajes](/api/anclajes): cabezas del registro ancladas en Bitcoin con OpenTimestamps; cada una con su archivo y su prueba .ots.
 - [Repetición en vivo](/api/repeticion): stream SSE que reproduce las decisiones registradas.
+- Servidor MCP: `/mcp` (Streamable HTTP) con procesar_factura (exige PIN), consultar_decision, listar_decisiones, metricas, integridad, orden_de_pago y mandato_resumen.
 
 ## Documentación
 - [Repositorio](https://github.com/giovanny4561/mandato-blinka): código, pruebas y evaluación.

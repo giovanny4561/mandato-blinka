@@ -25,7 +25,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, rieles, x402
+from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, rieles, servidor_mcp, x402
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -88,7 +88,8 @@ async def vida(_: FastAPI):
     parar = threading.Event()
     if config.ancla_minutos() > 0:
         threading.Thread(target=anclar_cada, args=(parar, config.ancla_minutos() * 60), daemon=True).start()
-    yield
+    async with servidor_mcp.sesiones():
+        yield
     parar.set()
 
 
@@ -106,6 +107,7 @@ app = FastAPI(title="Mandato", lifespan=vida, version="1.0",
               description="Agente de cuentas por pagar: decide PAGAR, ESCALAR o FRENAR facturas dentro de un mandato. "
                           "Lectura libre; escritura con PIN de operador. Resumen para modelos en /llms.txt.")
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
+app.add_route("/mcp", servidor_mcp.puerta)  # MCP por Streamable HTTP; ruta exacta, sin la redirección a /mcp/ de un mount
 
 
 def render(request: Request, nombre: str, status: int = 200, **ctx):

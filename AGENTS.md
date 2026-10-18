@@ -35,6 +35,7 @@ Diseño completo: `docs/SDD.md`. Playbook de JEV: `docs/PLAYBOOK-JEV.md`.
 - Datos de la demo (132 facturas, mandato de 12 proveedores): `demo/` (lo genera `scripts/generar_demo.py`). El set exacto de 24 sigue en `data/`.
 - Lectura sin PIN: `GET /api/metricas`, `GET /api/decisiones`, `GET /api/integridad` (cadena de hashes + cabeza firmada Ed25519), `GET /api/anclajes` (cabezas ancladas en Bitcoin con OpenTimestamps), `GET /api/decisiones/{id}/x402` (orden de pago x402 v2 simulada, sin firmar), `GET /api/repeticion` (SSE), `GET /health`.
 - Escritura con PIN (campo de formulario `pin`): `POST /api/procesar`, `POST /api/trabajos` (+ `GET /api/trabajos/{id}/eventos`, SSE).
+- MCP (Streamable HTTP) en `/mcp` (`app/servidor_mcp.py`): las mismas operaciones como herramientas; `procesar_factura` exige el PIN.
 - Las respuestas enmascaran cuenta e identificación tributaria.
 
 ## Estilo

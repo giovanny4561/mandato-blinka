@@ -17,6 +17,7 @@ dependencies = [
   "python-dotenv>=1.0",
   "psycopg[binary]>=3.2",
   "cryptography>=43",
+  "mcp==1.30.0",
 ]
 
 [dependency-groups]
