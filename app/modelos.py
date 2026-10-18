@@ -11,7 +11,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from app import rieles
+from app import ofac, rieles
 
 Veredicto = Literal["PAGAR", "ESCALAR", "FRENAR"]
 VeredictoRegla = Literal["OK", "ESCALAR", "FRENAR"]
@@ -92,6 +92,13 @@ class Proveedor(Estricto):
                 raise ValueError(f"{self.id}: " + "; ".join(errores))
         elif self.billetera_usdc and not rieles.billetera(self.billetera_usdc, self.red_usdc or "base"):
             raise ValueError(f"{self.id}: la billetera USDC no es una dirección válida")
+        return self
+
+    @model_validator(mode="after")
+    def _fuera_de_ofac(self):
+        """Un proveedor en la lista SDN de OFAC no entra al maestro."""
+        if ofac.sancionado(self.nombre):
+            raise ValueError(f"{self.id}: «{self.nombre}» figura en la lista de sanciones OFAC (SDN)")
         return self
 
 

@@ -121,3 +121,9 @@ def pines() -> dict[str, str]:
 def jurado_cupo() -> int:
     """Facturas que el jurado puede procesar por día (Bogotá)."""
     return int(os.getenv("JURADO_CUPO", "60"))
+
+
+def ofac_path() -> Path:
+    """Lista SDN de OFAC: la de DATA_DIR si existe; si no, la del repositorio (en Railway DATA_DIR es demo/)."""
+    propia = data_dir() / "ofac_sdn.txt"
+    return propia if propia.exists() else RAIZ / "data" / "ofac_sdn.txt"

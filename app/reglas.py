@@ -10,6 +10,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
+from app import ofac
 from app.mandato import a_base, acuerdo_por, alfanumerico, proveedor_por, tasa
 from app.modelos import (
     Acuerdo, Conciliacion, EntradaHistorial, Extraccion, Limites, Mandato, Proveedor, RespuestasJEV,
@@ -79,6 +80,9 @@ def _r00(e: Extraccion) -> ResultadoRegla:
 
 
 def _r01(e: Extraccion, prov: Proveedor | None) -> ResultadoRegla:
+    if nombre := ofac.sancionado(prov.nombre if prov else None, e.proveedor_nombre):
+        return _r("R01", "FRENAR", f"'{nombre}' figura en la lista de sanciones OFAC (SDN); no se le puede pagar",
+                  ofac_sdn=nombre, proveedor_id=prov.id if prov else None)
     if prov:
         return _r("R01", proveedor_id=prov.id)
     return _r("R01", "FRENAR",
