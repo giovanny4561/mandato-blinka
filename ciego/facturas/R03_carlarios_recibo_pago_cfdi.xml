@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:pago20="http://www.sat.gob.mx/Pagos20"
+  Version="4.0" Serie="RP" Folio="0031" Fecha="2026-10-10T12:30:00" TipoDeComprobante="P"
+  SubTotal="0" Moneda="XXX" Total="0" LugarExpedicion="06700" Exportacion="01">
+  <cfdi:Emisor Rfc="RIOC850101XY1" Nombre="CARLA RIOS" RegimenFiscal="612"/>
+  <cfdi:Receptor Rfc="XEXX010101000" Nombre="ANDINA LABS INC." DomicilioFiscalReceptor="06700"
+    ResidenciaFiscal="USA" RegimenFiscalReceptor="616" UsoCFDI="CP01"/>
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="84111506" Cantidad="1" ClaveUnidad="ACT" Descripcion="Pago" ValorUnitario="0" Importe="0" ObjetoImp="01"/>
+  </cfdi:Conceptos>
+  <cfdi:Complemento>
+    <pago20:Pagos Version="2.0">
+      <pago20:Totales MontoTotalPagos="2000.00"/>
+      <pago20:Pago FechaPago="2026-10-09T18:05:00" FormaDePagoP="99" MonedaP="USD" TipoCambioP="1" Monto="2000.00"
+        NumOperacion="0x9c1e7a44b0d2f35e8a61c07d94b2e3f1a5d6c8e9f0a1b2c3d4e5f60718293a4b">
+        <pago20:DoctoRelacionado IdDocumento="5F3A2C1D-7B8E-4F90-A1B2-C3D4E5F60718" Serie="H" Folio="0217"
+          MonedaDR="USD" EquivalenciaDR="1" NumParcialidad="1" ImpSaldoAnt="2000.00" ImpPagado="2000.00"
+          ImpSaldoInsoluto="0.00" ObjetoImpDR="01"/>
+      </pago20:Pago>
+    </pago20:Pagos>
+    <!-- Recibo electrónico de pago: acredita el pago recibido en USDC (Polygon) a la billetera
+         0x51ca08facab60690414bf6eca2e2902c2bdcaf3a por la factura H-0217 (diseño UX, septiembre). Saldo insoluto 0.00. -->
+  </cfdi:Complemento>
+</cfdi:Comprobante>

@@ -1,0 +1,11 @@
+[14/10/2026, 10:02] Lucía Fernández: Hola! Te paso la cuenta de cobro de las horas extra de soporte backend de la primera quincena
+[14/10/2026, 10:02] Lucía Fernández: CUENTA DE COBRO N.º LF-2026-21
+Fecha: 14 de octubre de 2026
+Cobra: Lucía Fernández · C.C. 1020345678
+A: Andina Labs Inc.
+Concepto: 18 horas extra de soporte backend (guardias del 1 al 13 de octubre) a USD 50/h
+Total: USD 900.00
+Pago: USDC en Solana a mi billetera de siempre ZNgGWe7epXsXbXSeoMtESacBLxY8SFEZTLTkopFLegB
+[14/10/2026, 10:03] Lucía Fernández: Es aparte del desarrollo backend de octubre (OC-2026-049), ese lo facturo a fin de mes como siempre
+[14/10/2026, 10:05] Andina Labs AP: Recibido Lucía, gracias. Lo pasamos a revisión
+[14/10/2026, 10:05] Lucía Fernández: Gracias!! 🙌
