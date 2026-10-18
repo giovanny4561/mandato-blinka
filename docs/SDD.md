@@ -67,7 +67,7 @@ persona lo aprueba en la app. Ese "pending" es exactamente el **ESCALAR** de Man
 | Datos | 100 % simulados, generados por script (`scripts/generar_facturas.py`). Nombres de empresas y cuentas inventados. | Regla del reto. **No usar** facturas reales de ~/Downloads ni ~/Descargas. |
 | Deploy | Railway (Gio ya lo usa) con semilla de resultados para que el panel nunca abra vacío. | Demo en vivo obligatoria. |
 | Idioma | UI y explicaciones en español. Preguntas a JEV en inglés (rinde mejor), contenido en español. | Guía oficial de TypeSafe. |
-| Licencia | MIT. `NOTICE` con atribuciones (Apache-2.0 de anthropics/financial-services; piezas propias de payment-verifier-bot y creditos-bot). | Repo público. |
+| Licencia | Todos los derechos reservados. `NOTICE` con atribuciones (Apache-2.0 de anthropics/financial-services; piezas propias de payment-verifier-bot y creditos-bot). | Repo público. |
 
 ---
 
@@ -138,7 +138,7 @@ mandato-blinka/
 │   └── casos.json            # esperado por caso
 ├── tests/                    # pytest, todo offline (LLM y JEV mockeados)
 ├── docs/SDD.md · docs/PLAYBOOK-JEV.md (opcional)
-├── README.md · NOTICE · LICENSE (MIT) · .env.example · pyproject.toml · Dockerfile
+├── README.md · NOTICE · LICENSE (derechos reservados) · .env.example · pyproject.toml · Dockerfile
 ```
 
 ---

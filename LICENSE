@@ -1,21 +1,27 @@
-MIT License
+Copyright (c) 2026 Giovanny Marín. Todos los derechos reservados.
 
-Copyright (c) 2026 Giovanny Marín
+Mandato. Hackathon 30X, octubre 2026, reto Blinka.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+El código, la documentación, los datos de demostración, el diseño y el video de este
+repositorio son obra de Giovanny Marín, que los publica solo para mostrarlos.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Se permite:
+- ver y leer este repositorio en GitHub;
+- que el jurado y los organizadores de la Hackathon 30X lo descarguen, ejecuten y
+  revisen para evaluar el proyecto dentro del concurso.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Nadie puede copiar, modificar, distribuir, sublicenciar, vender ni usar este
+proyecto o partes de él, con o sin fines comerciales, ni ofrecerlo como servicio,
+sin permiso escrito del autor.
+
+Las ideas y patrones de terceros que el proyecto adapta se citan en NOTICE; las
+dependencias conservan sus propias licencias.
+
+Permisos: https://github.com/giovanny4561
+
+---
+
+All rights reserved. This repository is published for viewing only. Viewing it on
+GitHub and its evaluation by the Hackathon 30X jury and organizers are permitted.
+Any other use, copying, modification, distribution or commercial use requires the
+author's written permission.

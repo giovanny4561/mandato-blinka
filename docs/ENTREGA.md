@@ -34,9 +34,9 @@ Resultados medidos sobre el set principal de 24 facturas simuladas (15 con tramp
 
 Las trampas incluyen cambio de cuenta del proveedor, correo de suplantación, instrucciones ocultas, duplicados exactos y casi duplicados, factura partida para quedar bajo el umbral, monto o concepto distintos a la orden de compra, otra moneda, proveedor desconocido, tope y presupuesto superados, factura vencida e imagen ilegible.
 
-Seguridad: "PAGAR implica las 18 reglas en orden" es una invariante. Los tests la prueban sobre los casos trampa y el panel la recalcula en cada carga. La demo está abierta, sin PIN, con un cupo diario de facturas por conexión; sin ese modo, cada acción que gasta créditos o cambia estado pide un PIN con rol. La API enmascara cuentas e identificaciones.
+Seguridad: "PAGAR implica las 18 reglas en orden" es una invariante. Los tests la prueban sobre los casos trampa y el panel la recalcula en cada carga. La demo está abierta: nadie escribe PIN y cada conexión procesa hasta 30 facturas por día. En modo cerrado, cada acción que gasta créditos o cambia estado pide un PIN con rol. La API enmascara cuentas e identificaciones.
 
-Stack: Python, FastAPI, Postgres (Railway), OpenRouter (Gemini 2.5 Flash/Flash-Lite y GPT-4.1 mini/nano) y JEV vía API de TypeSafe o Vercel AI Gateway. Licencia MIT; patrón de cuarentena adaptado de anthropics/financial-services (Apache-2.0) y formato del mandato inspirado en AP2.
+Stack: Python, FastAPI, Postgres (Railway), OpenRouter (Gemini 2.5 Flash/Flash-Lite y GPT-4.1 mini/nano) y JEV vía API de TypeSafe o Vercel AI Gateway. Todos los derechos reservados; patrón de cuarentena adaptado de anthropics/financial-services (Apache-2.0) y formato del mandato inspirado en AP2.
 
 Para probar: la portada muestra la red En vivo, las cifras y la integridad del registro; Decisiones tiene el registro completo y cada detalle muestra el recorrido de la factura paso a paso. Abre F16 (instrucciones ocultas) o F08 (cambio de cuenta) para ver por qué se frenaron. Para subir tus facturas usa el formulario de la portada, sin PIN; en Bandeja hay facturas de ejemplo para descargar. Arena muestra los 1.056 ataques y Mandato, las reglas y el riel de Blinka de cada proveedor.
 

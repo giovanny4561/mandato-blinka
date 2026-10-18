@@ -467,8 +467,7 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
   fraude. Mandato detecta que un pago **se sale del mandato** y lo frena o lo escala; las "señales de
   riesgo" de JEV endurecen la decisión.
 - Subidas limitadas a 5 MB y a PDF/PNG/JPG/EML/TXT; salida del LLM validada campo por campo; plantillas con autoescape.
-- La demo pública corre con `SIN_PIN=1`: nadie escribe PIN, todos entran como visitante y los campos de PIN desaparecen de las
-  páginas; cada IP procesa hasta `VISITANTE_CUPO` facturas por día (30) dentro de un tope común de `VISITANTES_TOPE` (300). Sin la
+- La demo pública corre con `SIN_PIN=1`: nadie escribe PIN, todos entran como visitante y las páginas no muestran campos de PIN; cada IP procesa hasta `VISITANTE_CUPO` facturas por día (30) dentro de un tope común de `VISITANTES_TOPE` (300). Sin la
   variable rige lo que sigue.
 - Toda acción que gasta llave o cambia estado exige un PIN, y cada PIN es un rol (≥ 6 caracteres, comparación en tiempo constante; vacío o `cambiar-esto` deshabilita ese rol; sin ningún PIN la app es de solo lectura):
   - `APROBADOR_PIN` (aprobador): todo.
@@ -489,4 +488,9 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
 
 Ver [`NOTICE`](NOTICE). Patrón de cuarentena y esquemas estrictos adaptados de `anthropics/financial-services`
 (Apache-2.0); formato del mandato inspirado en AP2; JEV / System One de TypeSafe AI; prompt de extracción y
-cola de aprobación humana de proyectos propios anteriores. Licencia MIT.
+cola de aprobación humana de proyectos propios anteriores.
+
+## Licencia
+
+Todos los derechos reservados. Publicamos el código para mostrarlo y para que el jurado de la Hackathon 30X lo evalúe;
+cualquier otro uso necesita permiso escrito del autor. Ver [`LICENSE`](LICENSE).
