@@ -8,7 +8,7 @@
 
 **Demo (URL):** https://mandato-production.up.railway.app
 
-**Video demo (URL):** https://mandato-production.up.railway.app/static/mandato-demo.mp4
+**Video demo (URL, 2:24):** https://mandato-production.up.railway.app/static/mandato-demo.mp4
 
 ## Descripción (pegar en el formulario)
 

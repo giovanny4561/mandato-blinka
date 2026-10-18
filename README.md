@@ -32,7 +32,7 @@ necesita a una persona.
 </table>
 
 > Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
-> Demo en vivo: https://mandato-production.up.railway.app · Video (97 s): https://mandato-production.up.railway.app/static/mandato-demo.mp4 · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
+> Demo en vivo: https://mandato-production.up.railway.app · Video (2:24): https://mandato-production.up.railway.app/static/mandato-demo.mp4 · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
 ---
 
