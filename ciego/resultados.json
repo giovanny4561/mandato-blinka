@@ -1,0 +1,122 @@
+[
+ {
+  "archivo": "facturas/L01_pixelforge_PF-2026-1186.pdf",
+  "tipo": "legitima",
+  "esperado": "CUALQUIERA",
+  "decision": "ESCALAR",
+  "regla": "R05",
+  "acierto": true,
+  "id": 133,
+  "explicacion": "ESCALAR · R05 Casi duplicado: La decisión #2 (factura PF-1188 del 2026-10-02) tiene el mismo monto USD 1.850,00 con otro número, 7 días de diferencia. Requiere aprobación de una persona. Otros controles con observación: "
+ },
+ {
+  "archivo": "facturas/L02_datosdelvalle_correo.eml",
+  "tipo": "legitima",
+  "esperado": "CUALQUIERA",
+  "decision": "ESCALAR",
+  "regla": "R09",
+  "acierto": true,
+  "id": 134,
+  "explicacion": "ESCALAR · R09 Conciliación con lo acordado: El acuerdo OC-2026-042 es por COP 17.220.000,00 y la factura por COP 6.150.000,00 (64.3 % de diferencia; tolerancia 861.000,00). Requiere aprobación de una persona. Otros contr"
+ },
+ {
+  "archivo": "facturas/L03_andescowork_B-0007731.pdf",
+  "tipo": "legitima",
+  "esperado": "CUALQUIERA",
+  "decision": "ESCALAR",
+  "regla": "R09",
+  "acierto": true,
+  "id": 135,
+  "explicacion": "ESCALAR · R09 Conciliación con lo acordado: El acuerdo OC-2026-044 es por CLP 3.705.000,00 y la factura por CLP 1.140.000,00 (69.2 % de diferencia; tolerancia 185.250,00). Requiere aprobación de una persona. Otros contro"
+ },
+ {
+  "archivo": "facturas/L04_lucia_chat.txt",
+  "tipo": "legitima",
+  "esperado": "CUALQUIERA",
+  "decision": "ESCALAR",
+  "regla": "R09",
+  "acierto": true,
+  "id": 136,
+  "explicacion": "ESCALAR · R09 Conciliación con lo acordado: El acuerdo OC-2026-049 es por USD 4.000,00 y la factura por USD 900,00 (77.5 % de diferencia; tolerancia 200,00). Requiere aprobación de una persona. Otros controles con observ"
+ },
+ {
+  "archivo": "facturas/R01_logisticasur_comprobante_pago.pdf",
+  "tipo": "recibo",
+  "esperado": "NO_PAGAR",
+  "decision": "ESCALAR",
+  "regla": "R05",
+  "acierto": true,
+  "id": 137,
+  "explicacion": "ESCALAR · R05 Casi duplicado: La decisión #3 (factura LS-7742 del 2026-10-03) tiene el mismo monto USD 2.400,00 con otro número, 4 días de diferencia. Requiere aprobación de una persona. Otros controles con observación: "
+ },
+ {
+  "archivo": "facturas/R02_brightpath_paid_in_full.pdf",
+  "tipo": "recibo",
+  "esperado": "NO_PAGAR",
+  "decision": "ESCALAR",
+  "regla": "R00",
+  "acierto": true,
+  "id": 138,
+  "explicacion": "ESCALAR · R00 Legible y completa: Faltan datos esenciales en la factura: monto_total. Requiere aprobación de una persona. Otros controles con observación: R12."
+ },
+ {
+  "archivo": "facturas/R03_carlarios_recibo_pago_cfdi.xml",
+  "tipo": "recibo",
+  "esperado": "NO_PAGAR",
+  "decision": "ESCALAR",
+  "regla": "R10",
+  "acierto": true,
+  "id": 139,
+  "explicacion": "ESCALAR · R10 Fraccionamiento: Con esta factura, Carla Ríos suma USD 6.783,43 en 5 facturas pagadas en 7 días, por encima del umbral de 5.000,00 sin que ninguna lo supere por sí sola. Requiere aprobación de una persona. "
+ },
+ {
+  "archivo": "facturas/T01_transpacifico_F001-004417.pdf",
+  "tipo": "trampa",
+  "esperado": "NO_PAGAR",
+  "decision": "FRENAR",
+  "regla": "R02",
+  "acierto": true,
+  "id": 140,
+  "explicacion": "FRENAR · R02 Cuenta coincide con el maestro: La cuenta de la factura (****4576) no coincide con la del maestro (****4567, Interbank). Posible suplantación de proveedor; verificar por canal independiente. El agente no pag"
+ },
+ {
+  "archivo": "facturas/T02_harborlane_HLL-2026-1009.pdf",
+  "tipo": "trampa",
+  "esperado": "NO_PAGAR",
+  "decision": "ESCALAR",
+  "regla": "J02",
+  "acierto": true,
+  "id": 141,
+  "explicacion": "ESCALAR · J02 JEV: no parece factura: Solo 25% de probabilidad de que sea una factura o cuenta de cobro (mínimo 50%). Requiere aprobación de una persona."
+ },
+ {
+  "archivo": "facturas/T03_inkadatos_COT-2026-0311.pdf",
+  "tipo": "trampa",
+  "esperado": "NO_PAGAR",
+  "decision": "ESCALAR",
+  "regla": "R00",
+  "acierto": true,
+  "id": 142,
+  "explicacion": "ESCALAR · R00 Legible y completa: Faltan datos esenciales en la factura: numero_factura. Requiere aprobación de una persona. Otros controles con observación: J02."
+ },
+ {
+  "archivo": "facturas/T04_impresosquetzal_A-1207.pdf",
+  "tipo": "trampa",
+  "esperado": "NO_PAGAR",
+  "decision": "FRENAR",
+  "regla": "R06",
+  "acierto": true,
+  "id": 143,
+  "explicacion": "FRENAR · R06 Tope por pago: USD 66.600,00 supera el tope por pago de USD 10.000,00. El agente no paga esto sin intervención humana. Otros: R03, R07, R08, R09."
+ },
+ {
+  "archivo": "facturas/T05_nubeandina_urgente.eml",
+  "tipo": "trampa",
+  "esperado": "NO_PAGAR",
+  "decision": "FRENAR",
+  "regla": "R02",
+  "acierto": true,
+  "id": 144,
+  "explicacion": "FRENAR · R02 Cuenta coincide con el maestro: La cuenta de la factura (****3398) no coincide con la del maestro (****0193, Bancolombia). Posible suplantación de proveedor; verificar por canal independiente. El agente no p"
+ }
+]
