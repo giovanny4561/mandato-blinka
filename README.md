@@ -99,7 +99,7 @@ desconocido, tope superado, presupuesto del mes agotado, vencida hace 90 días e
 
 ```mermaid
 flowchart TD
-    F(["Factura: PDF, imagen, correo o chat"]) --> L["Dos modelos la leen en cuarentena<br/>JEV responde 5 preguntas tipadas"]
+    F(["Factura: PDF, imagen, correo o chat"]) --> L["Dos modelos la leen en cuarentena<br/>JEV responde 6 preguntas tipadas"]
     L --> C["18 controles en código<br/>cada uno responde OK, ESCALAR o FRENAR"]
     C --> Q1{"¿Algún control frena?"}
     Q1 -- "sí" --> FR["FRENAR<br/>no se paga y nadie lo reabre"]
@@ -166,7 +166,7 @@ periodo, tolerancias de conciliación, acuerdos vigentes y umbrales de JEV. Se e
 
 JEV recibe un estado y preguntas tipadas (`noul` sí/no, `choice`, `score`) y devuelve todas las
 respuestas con su probabilidad calibrada en cientos de milisegundos, por fracciones de centavo. No
-genera texto. En Mandato responde cinco preguntas por factura (ver [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)).
+genera texto. En Mandato responde seis preguntas por factura (ver [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)).
 La demo y todas las cifras de esta página corren **JEV real** (`typesafe-ai/jev`) por Vercel AI Gateway (`AI_GATEWAY_API_KEY`;
 también acepta `TYPESAFE_API_KEY` directo). Sin llave queda un *shim* con el mismo contrato sobre un LLM, y el panel muestra cuál corrió.
 
@@ -184,7 +184,7 @@ cp .env.example .env          # OPENROUTER_API_KEY obligatoria; TYPESAFE_API_KEY
 uv sync
 uv run python scripts/generar_facturas.py     # regenera el set simulado (determinista)
 uv run uvicorn app.main:app --reload          # http://127.0.0.1:8000
-uv run pytest                                  # 210 pruebas, todas offline
+uv run pytest                                  # 218 pruebas, todas offline
 uv run python scripts/evaluar.py              # corrida real sobre los 24 casos → data/resultados.json
 ```
 
@@ -273,6 +273,29 @@ reglas en código.
 | Ataques | Terminaron en PAGAR | Frenados | Escalados a una persona |
 |---|---|---|---|
 | **1.056** (476 de una mutación, 580 de dos; facturas en USD, COP, MXN, CLP y PEN) | **0** | 471 | 585 |
+
+La página pública [`/arena`](https://mandato-production.up.railway.app/arena) corre la arena en el servidor y muestra qué
+regla paró cada tipo de ataque.
+
+## Set ciego: 12 facturas que el equipo no escribió
+
+Un agente aislado escribió [`ciego/`](ciego/README.md) sin leer el código, las pruebas ni los casos de la demo. Solo vio
+`demo/mandato.json`, lo mismo que la empresa le entregaría a un auditor externo. Una salvedad: su entorno le cargó
+`AGENTS.md`, que nombra las reglas (R00–R13, J01–J04) sin describirlas. El agente armó 4 facturas legítimas, 3 recibos o
+facturas ya pagadas y 5 trampas, en PDF, correo, chat y XML, y anotó en `ciego/esperado.json` qué debía pasar con cada
+una. Congelamos el set con los sha256 de `ciego/HASHES.txt` en el commit `71de55c` y lo corrimos una sola vez, en
+producción y con JEV real (`ciego/resultados.json`).
+
+| Grupo | Archivos | Resultado | Regla decisiva |
+|---|---|---|---|
+| Trampas | 5 | 3 frenadas, 2 escaladas | R02 cuenta distinta (2) y R06 tope; J02 no parece factura y R00 datos incompletos |
+| Recibos y facturas ya pagadas | 3 | 3 escaladas | R05 casi duplicado, R00 datos incompletos, R10 fraccionamiento |
+| Legítimas | 4 | 4 escaladas | R09 conciliación con lo acordado (3), R05 casi duplicado |
+
+Acertamos 12 de 12 según `esperado.json`: 0 pagos indebidos y 0 legítimas frenadas. Dos cosas salieron peor de lo que
+esperábamos. Mandato escaló los tres recibos por otras reglas, sin notar que ya estaban pagados; por eso JEV ahora
+responde la pregunta `already_paid` y J02 escala un recibo por lo que es. Y las 4 legítimas quedaron en manos de una
+persona, así que la autonomía en este set fue 0 de 4.
 
 ## Set de inyecciones (inspirado en PRAETOR)
 
