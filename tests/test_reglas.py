@@ -27,9 +27,10 @@ def entrada(id_, proveedor_id="PRV-001", numero="NA-2026-0900", monto="3200", fe
                             factura_hash=hash_ or f"hash-{id_}", decidido_por="agente")
 
 
-def jev(ocultas=0.02, factura=0.97, riesgo=0.3, acuerdo="matches", confianza=0.9):
+def jev(ocultas=0.02, factura=0.97, riesgo=0.3, acuerdo="matches", confianza=0.9, pagado=0.03):
     return RespuestasJEV(backend="llm", modelo="simulado", respuestas={
         "is_invoice": RespuestaJEV(tipo="noul", probabilidad=factura),
+        "already_paid": RespuestaJEV(tipo="noul", probabilidad=pagado),
         "hidden_instructions": RespuestaJEV(tipo="noul", probabilidad=ocultas),
         "matches_agreement": RespuestaJEV(tipo="choice", valor=acuerdo, confianza=confianza),
         "payment_risk": RespuestaJEV(tipo="score", valor=riesgo, confianza=0.9),
@@ -181,6 +182,23 @@ def test_j01_instrucciones_ocultas_frenan(m):
 def test_j02_no_parece_factura_escala(m):
     assert ev(m, jev_=jev(factura=0.2))["J02"].veredicto == "ESCALAR"
     assert ev(m, jev_=jev(factura=0.5))["J02"].veredicto == "OK"
+
+
+def test_j02_recibo_o_factura_ya_pagada_escala_con_su_mensaje(m):
+    r = ev(m, jev_=jev(pagado=0.5))["J02"]
+    assert r.veredicto == "ESCALAR" and "recibo" in r.mensaje and "pagar dos veces" in r.mensaje
+    assert r.evidencia["ya_pagado"] == 0.5 and r.evidencia["umbral_ya_pagado"] == 0.5
+    assert ev(m, jev_=jev(pagado=0.49))["J02"].veredicto == "OK"
+    assert "factura o cuenta de cobro" in ev(m, jev_=jev(factura=0.2, pagado=0.9))["J02"].mensaje  # no es factura: va primero
+
+
+def test_j02_sin_respuesta_de_ya_pagado_no_escala(m):
+    viejo = jev()
+    del viejo.respuestas["already_paid"]  # jev_esperado de data/ y demo/ anterior a la pregunta
+    r = ev(m, jev_=viejo)["J02"]
+    assert r.veredicto == "OK" and "ya_pagado" not in r.evidencia
+    solo = RespuestasJEV(backend="llm", modelo="m", respuestas={"already_paid": RespuestaJEV(tipo="noul", probabilidad=0.9)})
+    assert ev(m, jev_=solo)["J02"].veredicto == "ESCALAR"
 
 
 def test_j03_riesgo_escala_o_frena(m):

@@ -300,7 +300,7 @@ PAGAR es lo que queda cuando todas devuelven OK.
 | R12 | Extracción consistente y anclada | ESCALAR | `consistente=False` (pasadas A y B difieren) o cuenta, tax id, número o monto ausentes del texto del documento (se abstiene sin texto) |
 | R13 | Remitente | ESCALAR | canal correo y dominio del remitente ≠ `proveedor.dominio_correo` |
 | J01 | JEV: instrucciones ocultas | **FRENAR** | `hidden_instructions` ≥ `instrucciones_ocultas_frenar` |
-| J02 | JEV: no parece factura | ESCALAR | `is_invoice` < `no_es_factura_escalar` |
+| J02 | JEV: no parece factura | ESCALAR | `is_invoice` < `no_es_factura_escalar`, o `already_paid` ≥ `ya_pagado_escalar` (recibo o factura ya pagada) |
 | J03 | JEV: riesgo del pago | ESCALAR / **FRENAR** | `payment_risk` ≥ `riesgo_escalar` → ESCALAR; ≥ `riesgo_frenar` → FRENAR |
 | J04 | JEV: coincide con lo acordado | ESCALAR | `matches_agreement` ≠ `matches` con confianza ≥ `coincide_confianza_min` (alimenta R09) |
 

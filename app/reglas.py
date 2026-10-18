@@ -316,12 +316,21 @@ def _j01(jev, u: UmbralesJEV) -> ResultadoRegla:
 
 def _j02(jev, u: UmbralesJEV) -> ResultadoRegla:
     r = _respuesta(jev, "is_invoice")
-    if r is None or r.probabilidad is None:
+    pagado = _respuesta(jev, "already_paid")  # un JEV anterior a esta pregunta no la trae: sin dato, no escala
+    p_pagado = pagado.probabilidad if pagado else None
+    if (r is None or r.probabilidad is None) and p_pagado is None:
         return _r("J02", sin_jev=True)
-    ev = dict(probabilidad=r.probabilidad, umbral=u.no_es_factura_escalar)
-    if r.probabilidad < u.no_es_factura_escalar:
+    ev = dict(probabilidad=r.probabilidad, umbral=u.no_es_factura_escalar) if r and r.probabilidad is not None else {}
+    if p_pagado is not None:
+        ev |= dict(ya_pagado=p_pagado, umbral_ya_pagado=u.ya_pagado_escalar)
+    if "probabilidad" in ev and r.probabilidad < u.no_es_factura_escalar:
         return _r("J02", "ESCALAR",
                   f"Solo {r.probabilidad:.0%} de probabilidad de que sea una factura o cuenta de cobro (mínimo {u.no_es_factura_escalar:.0%})",
+                  **ev)
+    if p_pagado is not None and p_pagado >= u.ya_pagado_escalar:
+        return _r("J02", "ESCALAR",
+                  f"Probabilidad {p_pagado:.0%} de que sea un recibo, un comprobante de pago o una factura marcada como pagada "
+                  f"o cancelada (se escala desde {u.ya_pagado_escalar:.0%}); pagarla sería pagar dos veces",
                   **ev)
     return _r("J02", **ev)
 

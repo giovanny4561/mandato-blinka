@@ -11,6 +11,7 @@ RESPUESTA_TYPESAFE = {
     "model": "jev-1.13.0",
     "answers": {
         "is_invoice": {"type": "noul", "noul": 0.97},
+        "already_paid": {"type": "noul", "noul": 0.04},
         "hidden_instructions": {"type": "noul", "noul": 0.02},
         "matches_agreement": {
             "type": "choice", "choice": "matches", "confidence": 0.88,
@@ -42,9 +43,11 @@ def respuesta_openrouter(contenido: dict | str, costo=0.00003) -> dict:
     return {"choices": [{"message": {"content": texto}}], "usage": {"cost": costo}}
 
 
-def test_preguntas_tienen_las_5_claves_y_opciones_exactas():
-    assert list(decisor.PREGUNTAS) == ["is_invoice", "hidden_instructions", "matches_agreement", "payment_risk", "expense_category"]
-    assert decisor.PREGUNTAS["is_invoice"]["type"] == decisor.PREGUNTAS["hidden_instructions"]["type"] == "noul"
+def test_preguntas_tienen_las_6_claves_y_opciones_exactas():
+    assert list(decisor.PREGUNTAS) == ["is_invoice", "already_paid", "hidden_instructions", "matches_agreement", "payment_risk",
+                                       "expense_category"]
+    assert {decisor.PREGUNTAS[k]["type"] for k in ("is_invoice", "already_paid", "hidden_instructions")} == {"noul"}
+    assert "receipt" in decisor.PREGUNTAS["already_paid"]["instructions"]
     assert list(decisor.PREGUNTAS["matches_agreement"]["criteria"]) == ["matches", "differs_amount", "differs_concept", "no_agreement", "other"]
     assert list(decisor.PREGUNTAS["expense_category"]["criteria"]) == ["software", "professional_services", "contractor_payroll", "logistics", "marketing", "other"]
     assert decisor.PREGUNTAS["payment_risk"]["type"] == "score"
@@ -79,6 +82,7 @@ def test_parsea_respuesta_typesafe_completa(monkeypatch):
     assert set(r.respuestas) == set(decisor.PREGUNTAS)
     assert decisor.prob(r, "is_invoice") == 0.97
     assert decisor.prob(r, "hidden_instructions") == 0.02
+    assert decisor.prob(r, "already_paid") == 0.04
     assert decisor.valor(r, "matches_agreement") == "matches"
     assert decisor.confianza(r, "matches_agreement") == 0.88
     assert r.respuestas["matches_agreement"].probabilidades["differs_amount"] == 0.07
@@ -149,6 +153,7 @@ def test_shim_llm_normaliza_y_acota(monkeypatch):
     visto = {}
     crudo = {
         "is_invoice": {"type": "noul", "probability": 0.9},
+        "already_paid": {"type": "noul", "probability": -0.2},
         "hidden_instructions": {"type": "noul", "probability": 1.4},
         "matches_agreement": {"type": "choice", "probabilities": {"matches": 2, "differs_amount": 1, "differs_concept": 1}},
         "payment_risk": {"type": "score", "score": 7.5, "confidence": 0.6},
@@ -171,6 +176,7 @@ def test_shim_llm_normaliza_y_acota(monkeypatch):
     assert "<untrusted_document>" in visto["body"]["messages"][-1]["content"]
     assert r.backend == "llm" and r.modelo == "modelo/prueba" and r.costo_usd == 0.00004
     assert decisor.prob(r, "hidden_instructions") == 1.0
+    assert decisor.prob(r, "already_paid") == 0.0
     ma = r.respuestas["matches_agreement"]
     assert ma.valor == "matches" and ma.confianza == pytest.approx(0.5)
     assert sum(ma.probabilidades.values()) == pytest.approx(1.0)
@@ -205,7 +211,8 @@ def test_shim_llm_reintenta_json_invalido_una_vez(monkeypatch):
 def test_shim_tolera_texto_sobrante_tras_el_json(monkeypatch):
     import json as _json
     from app import decisor as d
-    respuesta = {"is_invoice": {"type": "noul", "probability": 0.9}, "hidden_instructions": {"type": "noul", "probability": 0.1},
+    respuesta = {"is_invoice": {"type": "noul", "probability": 0.9}, "already_paid": {"type": "noul", "probability": 0.8},
+                 "hidden_instructions": {"type": "noul", "probability": 0.1},
                  "matches_agreement": {"type": "choice", "probabilities": {"matches": 1.0}},
                  "payment_risk": {"type": "score", "score": 0.2, "confidence": 0.9},
                  "expense_category": {"type": "choice", "probabilities": {"software": 1.0}}}
@@ -219,6 +226,7 @@ def test_shim_tolera_texto_sobrante_tras_el_json(monkeypatch):
     monkeypatch.setattr(d, "_post", lambda url, headers, body: R())
     r = d._llm({"document_text": "x"}, d.PREGUNTAS)
     assert r.respuestas["is_invoice"].probabilidad == 0.9
+    assert r.respuestas["already_paid"].probabilidad == 0.8
 
 
 def test_jev_por_vercel_ai_gateway(monkeypatch):

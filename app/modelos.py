@@ -61,6 +61,8 @@ class UmbralesJEV(Estricto):
     # zona gris calibrada con JEV real: en 78 legítimas el máximo fue 0,05; desde 0,10 lo revisa una persona
     instrucciones_ocultas_escalar: float = 0.10
     no_es_factura_escalar: float = 0.5
+    # J02 también escala recibos y facturas ya pagadas (set ciego: «PAGADO», «Paid in full», CFDI tipo P)
+    ya_pagado_escalar: float = 0.5
     riesgo_escalar: float = 1.5
     riesgo_frenar: float = 2.5
     coincide_confianza_min: float = 0.6
