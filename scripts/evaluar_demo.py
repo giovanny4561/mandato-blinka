@@ -2,7 +2,7 @@
 
 Criterio por factura: NO_PAGAR (trampa) acierta si no se pagó; CUALQUIERA (legítima) acierta si no se frenó; PAGAR,
 ESCALAR o FRENAR exigen esa decisión y, si la hay, la regla decisiva. La regla esperada de una trampa es informativa.
-Uso: uv run python scripts/evaluar_demo.py [--url https://mandato-production.up.railway.app]
+Uso: uv run python scripts/evaluar_demo.py [--url https://tu-instancia]
 """
 import argparse
 import json

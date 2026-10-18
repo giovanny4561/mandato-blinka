@@ -12,7 +12,7 @@ necesita a una persona.
 
 ## Así se ve
 
-[![Portada de Mandato: tablero de cifras y la red En vivo repitiendo el registro](docs/img/01-portada.png)](https://mandato-production.up.railway.app)
+![Portada de Mandato: tablero de cifras y la red En vivo repitiendo el registro](docs/img/01-portada.png)
 
 *Al abrir la portada ves el registro repetirse: cada factura cruza dos lecturas y 18 controles hasta quedar pagada, por revisar o frenada.*
 
@@ -32,7 +32,7 @@ necesita a una persona.
 </table>
 
 > Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
-> Demo en vivo: https://mandato-production.up.railway.app · Video (2:24): https://mandato-production.up.railway.app/static/mandato-demo.mp4 · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
+> Demo en vivo y video (2:24): enlaces y PIN en la entrega de HackRadar · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
 ---
 
@@ -243,7 +243,7 @@ El `Dockerfile` arranca `uvicorn` con 1 worker (el candado de decisión vive en 
 
 Un agente externo (por ejemplo, uno de Blinka, que tiene API y MCP en acceso anticipado) puede usar Mandato como
 herramienta por el Model Context Protocol. El servidor (SDK oficial `mcp`, FastMCP) vive en la misma app, por
-Streamable HTTP sin sesión: **`https://mandato-production.up.railway.app/mcp`**.
+Streamable HTTP sin sesión, en la ruta **`/mcp`** de cada instancia (en local, `http://127.0.0.1:8000/mcp`).
 
 | Herramienta | Qué hace |
 |---|---|
@@ -258,13 +258,13 @@ pasa por la misma cuarentena que una subida por la web. Si la lectura o la decis
 responde «No se pudo leer o decidir esta factura; no se registró nada.» y guarda el detalle en el log del servidor.
 
 ```bash
-claude mcp add --transport http mandato https://mandato-production.up.railway.app/mcp
+claude mcp add --transport http mandato http://127.0.0.1:8000/mcp
 ```
 
 En Claude Desktop (`claude_desktop_config.json`), por el puente `mcp-remote`:
 
 ```json
-{"mcpServers": {"mandato": {"command": "npx", "args": ["-y", "mcp-remote", "https://mandato-production.up.railway.app/mcp"]}}}
+{"mcpServers": {"mandato": {"command": "npx", "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp"]}}}
 ```
 
 ---
@@ -314,7 +314,7 @@ reglas en código.
 |---|---|---|---|
 | **1.056** (476 de una mutación, 580 de dos; facturas en USD, COP, MXN, CLP y PEN) | **0** | 471 | 585 |
 
-La página pública [`/arena`](https://mandato-production.up.railway.app/arena) corre la arena en el servidor y muestra qué
+La página pública `/arena` corre la arena en el servidor y muestra qué
 regla paró cada tipo de ataque.
 
 ## Set ciego: 12 facturas que el equipo no escribió
@@ -375,7 +375,7 @@ Así detecta que alguien reescribió la historia aunque haya recalculado toda la
 import base64, httpx
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-f = httpx.get("https://mandato-production.up.railway.app/api/integridad").json()["firma"]
+f = httpx.get("http://127.0.0.1:8000/api/integridad").json()["firma"]
 Ed25519PublicKey.from_public_bytes(base64.b64decode(f["llave_publica"])).verify(
     base64.b64decode(f["firma"]), f["mensaje"].encode())  # lanza InvalidSignature si no coincide
 ```

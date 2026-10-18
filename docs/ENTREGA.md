@@ -6,9 +6,9 @@
 
 **Repositorio público de GitHub:** https://github.com/giovanny4561/mandato-blinka
 
-**Demo (URL):** https://mandato-production.up.railway.app
+**Demo (URL):** solo en el formulario de HackRadar
 
-**Video demo (URL, 2:24):** https://mandato-production.up.railway.app/static/mandato-demo.mp4
+**Video demo (URL, 2:24):** solo en el formulario de HackRadar; el archivo está en `app/static/mandato-demo.mp4`
 
 ## Descripción (pegar en el formulario)
 
