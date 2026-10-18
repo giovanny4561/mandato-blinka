@@ -113,3 +113,14 @@ def test_mcp_por_http_cuenta_los_pin_malos_por_ip():
         textos = [c.post("/mcp", headers=cabeceras, json=llamada).json()["result"]["content"][0]["text"] for _ in range(5)]
     assert "PIN incorrecto" in textos[0] and "Demasiados PIN incorrectos" in textos[4]
     assert "203.0.113.7" in main._castigo and "mcp" not in main._castigo
+
+
+def test_procesar_factura_no_filtra_errores_internos(simulados, monkeypatch, caplog):  # noqa: F811
+    def revienta(doc):
+        raise RuntimeError("psycopg: password authentication failed for user postgres at /app/app/registro.py")
+    monkeypatch.setattr(main, "procesar", revienta)
+    with pytest.raises(ValueError) as e:
+        anyio.run(servidor_mcp.procesar_factura, "F04.txt", base64.b64encode(CHAT).decode(), "123456")
+    assert str(e.value) == "No se pudo leer o decidir esta factura; no se registró nada."
+    assert "password" in caplog.text  # el detalle queda en el log del servidor, no en la respuesta
+    assert registro.listar() == []

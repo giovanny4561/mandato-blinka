@@ -6,10 +6,11 @@ cuenta e identificación tributaria, y la factura pasa por la misma cuarentena q
 import base64
 import binascii
 import io
+import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
@@ -50,9 +51,15 @@ async def procesar_factura(
         contenido = base64.b64decode(contenido_base64, validate=True)
     except binascii.Error:
         raise ValueError("contenido_base64 no es base64 válido")
-    doc = await main.leer_subida(UploadFile(io.BytesIO(contenido), filename=nombre_archivo))
-    main.gastar_cupo(rol, 1)
-    return main.publico(registro.obtener(await run_in_threadpool(main.procesar, doc)))
+    try:
+        doc = await main.leer_subida(UploadFile(io.BytesIO(contenido), filename=nombre_archivo))
+        main.gastar_cupo(rol, 1)
+        return main.publico(registro.obtener(await run_in_threadpool(main.procesar, doc)))
+    except HTTPException:
+        raise  # formato, tamaño o cupo: mensajes escritos para el cliente
+    except Exception:
+        logging.exception("procesar_factura por MCP falló")  # el detalle (rutas, base, modelos) queda solo en el log
+        raise ValueError("No se pudo leer o decidir esta factura; no se registró nada.")
 
 
 def _peticion(ctx: Context | None):
