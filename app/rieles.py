@@ -8,6 +8,8 @@ facturas. Nada aquí habla con Blinka: su API está en acceso anticipado y no es
 from __future__ import annotations
 
 import re
+from datetime import date, datetime, timezone
+from xml.etree import ElementTree as ET
 
 SEPA = {"AT", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS",
         "IT", "LI", "LT", "LU", "LV", "MC", "MT", "NL", "NO", "PL", "PT", "RO", "SE", "SI", "SK", "SM", "VA", "AD"}
@@ -191,3 +193,59 @@ def orden(d, prov) -> dict | None:
             "monto": str(e.monto_total), "moneda_factura": e.moneda, "beneficiario": beneficiario,
             "referencia": e.numero_factura, "decision": d.id, "sello": d.sello, "mandato": d.mandato_hash,
             "fecha_pago": d.fecha_pago_programada.isoformat() if d.fecha_pago_programada else None}
+
+
+PAIN001 = {"ach", "wire", "swift", "sepa"}  # los rieles bancarios: los que un banco recibe en un pain.001
+
+
+def _hijo(padre: ET.Element, ruta: str, texto: str | None = None, **atributos) -> ET.Element:
+    """Crea la cadena de elementos de `ruta` ("A/B/C") bajo `padre` y pone texto y atributos en el último."""
+    for nombre in ruta.split("/"):
+        padre = ET.SubElement(padre, nombre)
+    padre.text = texto
+    padre.attrib.update(atributos)
+    return padre
+
+
+def pain001(d, prov, empresa) -> str | None:
+    """pain.001.001.09 (ISO 20022, Customer Credit Transfer Initiation) de una orden por ACH, wire, SWIFT o SEPA: el
+    archivo que se carga en el banco del pagador. SIMULADO: la cuenta del deudor es un marcador y nada se envía."""
+    o = orden(d, prov)
+    if o is None or prov.riel not in PAIN001:
+        return None
+    e = d.extraccion
+    monto = f"{e.monto_total:.2f}"
+    raiz = ET.Element("Document", xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09")
+    inicio = ET.SubElement(raiz, "CstmrCdtTrfInitn")
+    grupo = ET.SubElement(inicio, "GrpHdr")
+    _hijo(grupo, "MsgId", f"MANDATO-{d.id}")
+    _hijo(grupo, "CreDtTm", datetime.now(timezone.utc).replace(microsecond=0).isoformat())
+    _hijo(grupo, "NbOfTxs", "1")
+    _hijo(grupo, "CtrlSum", monto)
+    _hijo(grupo, "InitgPty/Nm", empresa.nombre[:140])
+    pago = ET.SubElement(inicio, "PmtInf")
+    _hijo(pago, "PmtInfId", f"MANDATO-{d.id}-1")
+    _hijo(pago, "PmtMtd", "TRF")
+    _hijo(pago, "NbOfTxs", "1")
+    _hijo(pago, "CtrlSum", monto)
+    _hijo(pago, "ReqdExctnDt/Dt", o["fecha_pago"] or date.today().isoformat())
+    _hijo(pago, "Dbtr/Nm", empresa.nombre[:140])
+    _hijo(pago, "DbtrAcct/Id/Othr/Id", "SIMULADA")
+    _hijo(pago, "DbtrAgt/FinInstnId/Othr/Id", "NOTPROVIDED")  # obligatorio en el esquema; lo completa el banco del pagador
+    tx = ET.SubElement(pago, "CdtTrfTxInf")
+    _hijo(tx, "PmtId/EndToEndId", (d.sello or f"MANDATO-{d.id}")[:35])
+    _hijo(tx, "Amt/InstdAmt", monto, Ccy=e.moneda)
+    if prov.riel == "swift":
+        _hijo(tx, "CdtrAgt/FinInstnId/BICFI", prov.codigo_banco.upper())
+    elif prov.riel in ("ach", "wire"):
+        miembro = _hijo(tx, "CdtrAgt/FinInstnId/ClrSysMmbId")
+        _hijo(miembro, "ClrSysId/Cd", "USABA")
+        _hijo(miembro, "MmbId", _digitos(prov.codigo_banco))
+    _hijo(tx, "Cdtr/Nm", prov.nombre[:140])
+    if iban(prov.cuenta):
+        _hijo(tx, "CdtrAcct/Id/IBAN", re.sub(r"\s", "", prov.cuenta).upper())
+    else:
+        _hijo(tx, "CdtrAcct/Id/Othr/Id", prov.cuenta)
+    _hijo(tx, "RmtInf/Ustrd", f"Factura {e.numero_factura}")
+    ET.indent(raiz)
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(raiz, encoding="unicode") + "\n"

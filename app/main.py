@@ -363,6 +363,17 @@ def api_orden_x402(id_: int):
     return orden
 
 
+@app.get("/api/decisiones/{id_}/pain001", operation_id="pain001",
+         summary="pain.001.001.09 (ISO 20022) SIMULADO de una decisión PAGAR por ACH, wire, SWIFT o SEPA, para cargar en el banco")
+def api_pain001(id_: int):
+    d = registro.obtener(id_)
+    xml = rieles.pain001(d, proveedor_de(d), mod_mandato.cargar().empresa) if d else None
+    if xml is None:
+        raise HTTPException(404, "esta decisión no tiene pain.001: no es PAGAR o el proveedor no cobra por ACH, wire, SWIFT ni SEPA")
+    return Response(xml, media_type="application/xml",
+                    headers={"Content-Disposition": f'attachment; filename="pain001-decision-{id_}.xml"'})
+
+
 COLUMNAS_CSV = ("id", "ts", "archivo", "canal", "proveedor_id", "proveedor_nombre", "numero_factura", "monto_total", "moneda",
                 "decision", "regla_decisiva", "decidido_por", "referencia_a", "riel_sugerido", "explicacion", "mandato_hash",
                 "sello", "costo_usd", "latencia_ms")
@@ -610,8 +621,10 @@ def detalle(request: Request, id_: int):
     d = registro.obtener(id_)
     if d is None:
         raise HTTPException(404, "decisión no encontrada")
+    prov = proveedor_de(d)
     return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_),
-                  pago=rieles.orden(d, proveedor_de(d)), orden=orden_x402(d))
+                  pago=rieles.orden(d, prov), orden=orden_x402(d),
+                  pain001=rieles.pain001(d, prov, mod_mandato.cargar().empresa) is not None)
 
 
 @functools.cache

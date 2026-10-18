@@ -81,3 +81,93 @@ def test_riel_sugerido_y_orden_por_riel():
     assert o["riel"] == "Bre-B" and o["moneda_pago"] == "COP" and o["estado"].startswith("simulada")
     assert o["beneficiario"]["cuenta"] == "****NA01"
     assert rieles.orden(hacer_decision(decision="ESCALAR"), nube) is None
+
+
+# ---------- pain.001.001.09 (ISO 20022) ----------
+import xml.etree.ElementTree as ET
+
+from fastapi.testclient import TestClient
+
+from app import registro
+from app.main import app
+from app.modelos import Empresa, Proveedor
+
+NS = {"p": "urn:iso:std:iso:20022:tech:xsd:pain.001.001.09"}
+EMPRESA = Empresa(nombre="Andina Labs Inc.", pais="US", moneda_base="USD")
+SELLO = "ab12" * 16
+
+
+def _prov(**cambios) -> Proveedor:
+    return Proveedor(**(dict(id="PRV-X", nombre="Pixel Forge LLC", tax_id="87-1234567", pais="US", moneda="USD",
+                             banco="Chase", cuenta="483920175", riel="ach", codigo_banco="021000021") | cambios))
+
+
+def _pain(prov, **cambios):
+    d = hacer_decision(id=7, sello=SELLO, fecha_pago_programada=date(2026, 10, 20), **cambios)
+    return ET.fromstring(rieles.pain001(d, prov, EMPRESA))
+
+
+def _t(doc, ruta):
+    return doc.findtext(ruta, namespaces=NS)
+
+
+def test_pain001_swift_lleva_bic_monto_fecha_y_referencia():
+    nube = next(p for p in mod_mandato.cargar().proveedores_permitidos if p.id == "PRV-001")
+    doc = _pain(nube)
+    assert doc.tag == "{urn:iso:std:iso:20022:tech:xsd:pain.001.001.09}Document"
+    assert _t(doc, "p:CstmrCdtTrfInitn/p:GrpHdr/p:NbOfTxs") == "1"
+    assert _t(doc, "p:CstmrCdtTrfInitn/p:GrpHdr/p:CtrlSum") == "3200.00"
+    assert _t(doc, "p:CstmrCdtTrfInitn/p:GrpHdr/p:InitgPty/p:Nm") == "Andina Labs Inc."
+    assert _t(doc, ".//p:PmtInf/p:PmtMtd") == "TRF" and _t(doc, ".//p:PmtInf/p:ReqdExctnDt/p:Dt") == "2026-10-20"
+    assert _t(doc, ".//p:Dbtr/p:Nm") == "Andina Labs Inc." and _t(doc, ".//p:DbtrAcct/p:Id/p:Othr/p:Id") == "SIMULADA"
+    monto = doc.find(".//p:CdtTrfTxInf/p:Amt/p:InstdAmt", NS)
+    assert monto.text == "3200.00" and monto.get("Ccy") == "USD"
+    assert _t(doc, ".//p:CdtTrfTxInf/p:PmtId/p:EndToEndId") == SELLO[:35]
+    assert _t(doc, ".//p:CdtrAgt/p:FinInstnId/p:BICFI") == "COLOCOBM"
+    assert _t(doc, ".//p:Cdtr/p:Nm") == "Nube Andina SAS" and _t(doc, ".//p:CdtrAcct/p:Id/p:Othr/p:Id") == nube.cuenta
+    assert "NA-2026-0917" in _t(doc, ".//p:RmtInf/p:Ustrd")
+
+
+@pytest.mark.parametrize("riel", ["ach", "wire"])
+def test_pain001_ach_y_wire_identifican_el_banco_por_aba(riel):
+    doc = _pain(_prov(riel=riel))
+    assert _t(doc, ".//p:CdtrAgt/p:FinInstnId/p:ClrSysMmbId/p:ClrSysId/p:Cd") == "USABA"
+    assert _t(doc, ".//p:CdtrAgt/p:FinInstnId/p:ClrSysMmbId/p:MmbId") == "021000021"
+    assert doc.find(".//p:BICFI", NS) is None and _t(doc, ".//p:CdtrAcct/p:Id/p:Othr/p:Id") == "483920175"
+
+
+def test_pain001_sepa_lleva_iban_y_euros():
+    doc = _pain(_prov(pais="DE", moneda="EUR", riel="sepa", cuenta="DE89 3704 0044 0532 0130 00", codigo_banco=None),
+                extraccion=hacer_extraccion(moneda="EUR", monto_total=Decimal("1234.5")))
+    assert _t(doc, ".//p:CdtrAcct/p:Id/p:IBAN") == "DE89370400440532013000"
+    monto = doc.find(".//p:InstdAmt", NS)
+    assert monto.text == "1234.50" and monto.get("Ccy") == "EUR" and _t(doc, ".//p:GrpHdr/p:CtrlSum") == "1234.50"
+
+
+def test_pain001_escapa_el_texto_del_proveedor_y_de_la_factura():
+    doc = _pain(_prov(nombre="Pixel & <Forge>"), extraccion=hacer_extraccion(numero_factura="A&B<1>"))
+    assert _t(doc, ".//p:Cdtr/p:Nm") == "Pixel & <Forge>" and "A&B<1>" in _t(doc, ".//p:RmtInf/p:Ustrd")
+
+
+def test_pain001_no_aplica_a_usdc_bre_b_ni_a_lo_que_no_es_pagar():
+    usdc = _prov(riel="usdc", red_usdc="base", billetera_usdc="0x" + "1" * 40, codigo_banco=None)
+    breb = _prov(pais="CO", moneda="COP", riel="bre_b", cuenta="@NUBEANDINA01", codigo_banco=None)
+    assert rieles.pain001(hacer_decision(), usdc, EMPRESA) is None
+    assert rieles.pain001(hacer_decision(), breb, EMPRESA) is None
+    assert rieles.pain001(hacer_decision(decision="FRENAR"), _prov(), EMPRESA) is None
+    assert rieles.pain001(hacer_decision(), None, EMPRESA) is None
+
+
+def test_api_pain001_descarga_el_xml_o_404():
+    registro.insertar(hacer_decision())  # Nube Andina: SWIFT
+    registro.insertar(hacer_decision(factura_hash="otra", decision="FRENAR", regla_decisiva="R02"))
+    registro.insertar(hacer_decision(factura_hash="usdc", proveedor_id="PRV-002"))  # Pixel Forge: USDC en Base
+    with TestClient(app) as c:
+        r = c.get("/api/decisiones/1/pain001")
+        assert r.status_code == 200 and r.headers["content-type"].startswith("application/xml")
+        assert "attachment" in r.headers["content-disposition"]
+        assert ET.fromstring(r.content).find(".//p:BICFI", NS).text == "COLOCOBM"
+        for id_ in (2, 3, 999):
+            assert c.get(f"/api/decisiones/{id_}/pain001").status_code == 404
+        assert "Descargar pain.001 (ISO 20022)" in c.get("/decisiones/1").text
+        assert "pain.001" not in c.get("/decisiones/3").text

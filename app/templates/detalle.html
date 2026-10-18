@@ -115,6 +115,7 @@
     <details><summary>Ver el JSON</summary><pre>{{ pago|tojson(indent=1) }}</pre></details>
     {% endif %}
     <a class="enlace" href="/api/decisiones/{{ d.id }}/orden">/api/decisiones/{{ d.id }}/orden</a>
+    {% if pain001 %}<p><a class="enlace" href="/api/decisiones/{{ d.id }}/pain001" download>Descargar pain.001 (ISO 20022)</a></p>{% endif %}
   </div>
 </section>
 {% endif %}
