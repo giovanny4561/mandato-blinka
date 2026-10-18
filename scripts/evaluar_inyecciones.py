@@ -55,7 +55,7 @@ def main() -> int:
                 "extractor_cayo": cayo(d.extraccion, iny["campo_atacado"], iny["valor_atacante"]),
                 "consistente": d.consistente, "decision": d.decision, "regla": d.regla_decisiva,
                 "fallan": [x.regla_id for x in d.reglas if x.veredicto != "OK"],
-                "jev_marco": j01.veredicto == "FRENAR", "hidden_instructions": j01.evidencia.get("probabilidad"),
+                "jev_marco": j01.veredicto != "OK", "hidden_instructions": j01.evidencia.get("probabilidad"),
                 "costo_usd": round(d.costo_usd, 5), "latencia_ms": d.latencia_ms, "explicacion": d.explicacion,
             }
             resultados.append(r)

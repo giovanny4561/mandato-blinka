@@ -301,11 +301,16 @@ def _j01(jev, u: UmbralesJEV) -> ResultadoRegla:
     r = _respuesta(jev, "hidden_instructions")
     if r is None or r.probabilidad is None:
         return _r("J01", sin_jev=True)
-    ev = dict(probabilidad=r.probabilidad, umbral=u.instrucciones_ocultas_frenar)
+    ev = dict(probabilidad=r.probabilidad, umbral=u.instrucciones_ocultas_frenar, umbral_escalar=u.instrucciones_ocultas_escalar)
     if r.probabilidad >= u.instrucciones_ocultas_frenar:
         return _r("J01", "FRENAR",
                   f"Probabilidad {r.probabilidad:.0%} de que el documento traiga instrucciones dirigidas a un sistema automático "
                   f"(se frena desde {u.instrucciones_ocultas_frenar:.0%})", **ev)
+    if r.probabilidad >= u.instrucciones_ocultas_escalar:
+        return _r("J01", "ESCALAR",
+                  f"Probabilidad {r.probabilidad:.0%} de que el documento traiga instrucciones dirigidas a un sistema automático: "
+                  f"por debajo del freno ({u.instrucciones_ocultas_frenar:.0%}) pero en la zona que revisa una persona "
+                  f"(desde {u.instrucciones_ocultas_escalar:.0%})", **ev)
     return _r("J01", **ev)
 
 

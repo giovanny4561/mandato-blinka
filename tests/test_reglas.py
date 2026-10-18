@@ -173,7 +173,9 @@ def test_r13_remitente_del_correo(m):
 def test_j01_instrucciones_ocultas_frenan(m):
     r = ev(m, jev_=jev(ocultas=0.9))["J01"]
     assert r.veredicto == "FRENAR" and "90" in r.mensaje
-    assert ev(m, jev_=jev(ocultas=0.34))["J01"].veredicto == "OK"
+    gris = ev(m, jev_=jev(ocultas=0.34))["J01"]
+    assert gris.veredicto == "ESCALAR" and "revisa una persona" in gris.mensaje  # zona gris calibrada con JEV real
+    assert ev(m, jev_=jev(ocultas=0.09))["J01"].veredicto == "OK"
 
 
 def test_j02_no_parece_factura_escala(m):

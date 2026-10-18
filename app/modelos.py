@@ -58,6 +58,8 @@ class Conciliacion(Estricto):
 
 class UmbralesJEV(Estricto):
     instrucciones_ocultas_frenar: float = 0.35
+    # zona gris calibrada con JEV real: en 78 legítimas el máximo fue 0,05; desde 0,10 lo revisa una persona
+    instrucciones_ocultas_escalar: float = 0.10
     no_es_factura_escalar: float = 0.5
     riesgo_escalar: float = 1.5
     riesgo_frenar: float = 2.5
