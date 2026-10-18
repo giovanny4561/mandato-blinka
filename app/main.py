@@ -11,8 +11,10 @@ import anyio
 import hmac
 import json
 import logging
+import math
 import re
 import threading
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from decimal import Decimal
@@ -118,7 +120,7 @@ def render(request: Request, nombre: str, status: int = 200, **ctx):
     return plantillas.TemplateResponse(request, nombre, ctx, status_code=status)
 
 
-TITULOS_ERROR = {400: "No se pudo procesar", 403: "Sin permiso", 404: "No encontrado", 429: "Cupo agotado"}
+TITULOS_ERROR = {400: "No se pudo procesar", 403: "Sin permiso", 404: "No encontrado", 429: "Límite alcanzado"}
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -140,11 +142,46 @@ PERMISOS = {
 }
 
 
-def exigir_pin(pin: str, permiso: str) -> str:
-    """Toda acción que gasta llave o cambia estado exige un PIN con permiso; devuelve el rol. Tiempo constante."""
+# shortcut: los PIN fallidos se cuentan en memoria y se reinician con cada deploy; en producción irían en la base.
+_fallos: dict[str, list[float]] = {}  # IP (o "mcp") → momentos de sus PIN incorrectos de los últimos 15 minutos
+_castigo: dict[str, float] = {}  # IP (o "mcp") → hasta cuándo responde 429
+_fallos_lock = threading.Lock()
+MAX_FALLOS, VENTANA_S = 5, 15 * 60
+
+
+def ip(request: Request | None) -> str:
+    """IP del cliente: Railway la pone en X-Real-IP (el socket ve su proxy). Sin petición HTTP (MCP en memoria): "mcp"."""
+    # shortcut: fuera de Railway X-Real-IP lo escribe el cliente y puede rotarlo para saltarse el límite; detrás de otro
+    # proxy, leer la cabecera que ese proxy garantice
+    if request is None:
+        return "mcp"
+    return request.headers.get("x-real-ip") or (request.client.host if request.client else "mcp")
+
+
+def _castigado(clave: str, ahora: float) -> HTTPException:
+    minutos = math.ceil((_castigo[clave] - ahora) / 60)
+    return HTTPException(429, f"Demasiados PIN incorrectos: {MAX_FALLOS} en {VENTANA_S // 60} minutos desde esta conexión. "
+                              f"Espera {minutos} minutos antes de volver a intentar.")
+
+
+def exigir_pin(pin: str, permiso: str, clave: str) -> str:
+    """Toda acción que gasta llave o cambia estado exige un PIN con permiso; devuelve el rol. Tiempo constante.
+
+    `clave` es la IP del cliente: 5 PIN incorrectos en 15 minutos la castigan 15 minutos con 429, y durante el castigo
+    ni el PIN correcto entra."""
+    ahora = time.monotonic()
+    with _fallos_lock:
+        if _castigo.get(clave, 0) > ahora:
+            raise _castigado(clave, ahora)
     roles = [rol for rol, esperado in config.pines().items()
              if esperado and hmac.compare_digest(pin.encode(), esperado.encode())]
     if not roles:
+        with _fallos_lock:
+            _fallos[clave] = [t for t in _fallos.get(clave, []) if ahora - t < VENTANA_S] + [ahora]
+            if len(_fallos[clave]) >= MAX_FALLOS:
+                del _fallos[clave]
+                _castigo[clave] = ahora + VENTANA_S
+                raise _castigado(clave, ahora)
         raise HTTPException(403, "PIN incorrecto")
     accion, permitidos = PERMISOS[permiso]
     if roles[0] not in permitidos:
@@ -286,8 +323,8 @@ def api_anclaje_archivo(id_: int):
 
 
 @app.post("/api/anclajes", operation_id="anclar", summary="Ancla ya la cabeza del registro en OpenTimestamps (requiere PIN)")
-def api_anclar(pin: str = Form(...)):
-    exigir_pin(pin, "anclar")
+def api_anclar(request: Request, pin: str = Form(...)):
+    exigir_pin(pin, "anclar", ip(request))
     try:
         a = ancla.anclar_cabeza()
     except RuntimeError as e:
@@ -372,9 +409,10 @@ def api_decisiones(limite: int = Query(200, ge=1, le=500)):
 
 
 @app.post("/api/trabajos")
-async def api_trabajo(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...), pin: str = Form(...)):
+async def api_trabajo(request: Request, tareas: BackgroundTasks, archivos: list[UploadFile] = File(...),
+                      pin: str = Form(...)):
     """Sube una o varias facturas y devuelve un trabajo cuyo progreso se sigue por SSE en /api/trabajos/{id}/eventos."""
-    rol = exigir_pin(pin, "procesar")
+    rol = exigir_pin(pin, "procesar", ip(request))
     docs = await leer_subidas(archivos)
     gastar_cupo(rol, len(docs))
     t = flujo.crear(len(docs))
@@ -426,8 +464,8 @@ async def api_repeticion(ritmo: float = Query(0.7, ge=0.2, le=3.0)):
 
 
 @app.post("/api/procesar", operation_id="procesar_factura", summary="Procesa una factura y devuelve la decisión (requiere PIN)")
-async def api_procesar(archivo: UploadFile, pin: str = Form(...)):
-    rol = exigir_pin(pin, "procesar")
+async def api_procesar(request: Request, archivo: UploadFile, pin: str = Form(...)):
+    rol = exigir_pin(pin, "procesar", ip(request))
     doc = await leer_subida(archivo)
     gastar_cupo(rol, 1)
     return publico(registro.obtener(await run_in_threadpool(procesar, doc)))
@@ -492,7 +530,7 @@ def ver_mandato(request: Request, guardado: bool = False):
 
 @app.post("/mandato", response_class=HTMLResponse, include_in_schema=False)
 def guardar_mandato(request: Request, json: str = Form(...), pin: str = Form(...)):
-    exigir_pin(pin, "mandato")
+    exigir_pin(pin, "mandato", ip(request))
     try:
         nuevo = Mandato.model_validate_json(json)
     except ValidationError as e:
@@ -506,7 +544,7 @@ def guardar_limites(request: Request, pin: str = Form(...), tope_por_pago: Decim
                     umbral_aprobacion_humana: Decimal = Form(...), presupuesto: Decimal = Form(...),
                     exigir_acuerdo_desde: Decimal = Form(...), tolerancia_pct: Decimal = Form(...)):
     """Formulario simple: cambia solo los cinco límites y valida el mandato completo antes de guardar."""
-    exigir_pin(pin, "mandato")
+    exigir_pin(pin, "mandato", ip(request))
     datos = mod_mandato.cargar().model_dump()
     datos["limites"] |= {"tope_por_pago": tope_por_pago, "umbral_aprobacion_humana": umbral_aprobacion_humana}
     datos["limites"]["presupuesto_periodo"]["monto"] = presupuesto
@@ -527,9 +565,9 @@ def bandeja(request: Request):
 
 
 @app.post("/bandeja", include_in_schema=False)
-async def subir(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...), pin: str = Form(...)):
+async def subir(request: Request, tareas: BackgroundTasks, archivos: list[UploadFile] = File(...), pin: str = Form(...)):
     """Una factura: espera la decisión y abre su detalle. Varias: las procesa en lote y abre En vivo."""
-    rol = exigir_pin(pin, "procesar")
+    rol = exigir_pin(pin, "procesar", ip(request))
     docs = await leer_subidas(archivos)
     gastar_cupo(rol, len(docs))
     if len(docs) == 1:
@@ -540,8 +578,8 @@ async def subir(tareas: BackgroundTasks, archivos: list[UploadFile] = File(...),
 
 
 @app.post("/bandeja/demo", include_in_schema=False)
-def demo(tareas: BackgroundTasks, pin: str = Form(...)):
-    rol = exigir_pin(pin, "procesar")
+def demo(request: Request, tareas: BackgroundTasks, pin: str = Form(...)):
+    rol = exigir_pin(pin, "procesar", ip(request))
     if not _demo.acquire(blocking=False):
         return RedirectResponse("/#en-vivo", status_code=303)
     docs = docs_demo_pendientes()
@@ -602,8 +640,8 @@ def riesgo_jev(d) -> float:
 
 
 @app.post("/pendientes/{id_}/resolver", include_in_schema=False)
-def resolver(id_: int, accion: str = Form(...), pin: str = Form(...), nota: str = Form("")):
-    rol = exigir_pin(pin, "resolver")
+def resolver(request: Request, id_: int, accion: str = Form(...), pin: str = Form(...), nota: str = Form("")):
+    rol = exigir_pin(pin, "resolver", ip(request))
     if accion not in ("aprobar", "rechazar"):
         raise HTTPException(400, "acción inválida")
     try:

@@ -312,7 +312,45 @@ def test_formulario_html_con_pin_sin_permiso_ve_una_pagina_de_error(simulados, r
         assert r.status_code == 403 and "PIN incorrecto" in r.text and 'href="/mandato"' in r.text
         monkeypatch.setenv("JURADO_CUPO", "0")
         r = c.post("/bandeja", files={"archivos": ("F05.txt", CHAT, "text/plain")}, data={"pin": "333333"}, headers=HTML)
-        assert r.status_code == 429 and "Cupo agotado" in r.text and 'href="/bandeja"' in r.text
+        assert r.status_code == 429 and "Límite alcanzado" in r.text and 'href="/bandeja"' in r.text
         # la API y los clientes sin text/html siguen recibiendo JSON
         assert c.post("/api/anclajes", data={"pin": "mal"}, headers=HTML).json() == {"detail": "PIN incorrecto"}
         assert c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "mal"}).json() == {"detail": "PIN incorrecto"}
+
+
+# ---------- límite de intentos de PIN ----------
+import time
+
+FACTURA = {"archivo": ("F04.txt", CHAT, "text/plain")}
+
+
+def test_cinco_pin_malos_bloquean_la_ip_15_minutos(simulados, roles):
+    esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08"))
+    with TestClient(app) as c:
+        for _ in range(4):
+            assert c.post("/api/anclajes", data={"pin": "mal"}).status_code == 403
+        r = c.post("/mandato/limites", data=LIMITES | {"pin": "mal"})
+        assert r.status_code == 429 and "Demasiados PIN incorrectos" in r.json()["detail"] and "15 minutos" in r.json()["detail"]
+        # con el castigo activo, ni el PIN correcto entra, en ninguna ruta con PIN
+        assert c.post("/api/procesar", files=FACTURA, data={"pin": "123456"}).status_code == 429
+        assert c.post("/api/trabajos", files={"archivos": FACTURA["archivo"]}, data={"pin": "123456"}).status_code == 429
+        assert c.post("/bandeja", files={"archivos": FACTURA["archivo"]}, data={"pin": "123456"}).status_code == 429
+        assert c.post("/bandeja/demo", data={"pin": "123456"}).status_code == 429
+        assert c.post("/mandato", data={"json": "{}", "pin": "123456"}).status_code == 429
+        assert c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "123456"}).status_code == 429
+        assert c.post("/api/anclajes", data={"pin": "222222"}).status_code == 429
+        r = c.post("/mandato/limites", data=LIMITES | {"pin": "123456"}, headers=HTML)
+        assert r.status_code == 429 and "Límite alcanzado" in r.text and "Demasiados PIN incorrectos" in r.text
+        assert registro.listar() and len(registro.listar()) == 1  # nada se procesó ni se resolvió
+        # otra IP (Railway la manda en X-Real-IP) no hereda el castigo
+        assert c.post("/api/procesar", files=FACTURA, data={"pin": "222222"}, headers={"X-Real-IP": "203.0.113.9"}).status_code == 200
+        # pasados los 15 minutos vuelve a entrar
+        main._castigo["testclient"] -= 15 * 60
+        assert c.post("/api/procesar", files=FACTURA, data={"pin": "222222"}).status_code == 200
+
+
+def test_los_pin_malos_de_hace_mas_de_15_minutos_no_cuentan(roles):
+    main._fallos["testclient"] = [time.monotonic() - 16 * 60] * 4
+    with TestClient(app) as c:
+        assert c.post("/api/anclajes", data={"pin": "mal"}).status_code == 403
+        assert c.post("/api/anclajes", data={"pin": "222222"}).status_code == 409

@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from app import registro, servidor_mcp
+from app import main, registro, servidor_mcp
 from app import mandato as mod_mandato
 from app.main import app
 from tests.conftest import hacer_decision
@@ -87,3 +87,29 @@ def test_mcp_por_http():
         assert set(herramientas) == HERRAMIENTAS
         assert herramientas["metricas"]["annotations"]["readOnlyHint"] is True
         assert "readOnlyHint" not in (herramientas["procesar_factura"].get("annotations") or {})
+
+
+def test_mcp_sin_ip_cuenta_los_pin_malos_con_la_clave_mcp(simulados):  # noqa: F811
+    b64 = base64.b64encode(CHAT).decode()
+    for _ in range(4):
+        with pytest.raises(HTTPException) as e:
+            anyio.run(servidor_mcp.procesar_factura, "F04.txt", b64, "mal")
+        assert e.value.status_code == 403
+    with pytest.raises(HTTPException) as e:
+        anyio.run(servidor_mcp.procesar_factura, "F04.txt", b64, "mal")
+    assert e.value.status_code == 429 and "Demasiados PIN incorrectos" in e.value.detail
+    with pytest.raises(HTTPException) as e:  # el PIN correcto no limpia el castigo
+        anyio.run(servidor_mcp.procesar_factura, "F04.txt", b64, "123456")
+    assert e.value.status_code == 429 and registro.listar() == []
+    with TestClient(app) as c:  # la web cuenta por IP: el castigo del MCP no la alcanza
+        assert c.post("/api/procesar", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "123456"}).status_code == 200
+
+
+def test_mcp_por_http_cuenta_los_pin_malos_por_ip():
+    cabeceras = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json", "X-Real-IP": "203.0.113.7"}
+    llamada = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "procesar_factura", "arguments": {
+        "nombre_archivo": "a.txt", "contenido_base64": "", "pin": "mal"}}}
+    with TestClient(app) as c:
+        textos = [c.post("/mcp", headers=cabeceras, json=llamada).json()["result"]["content"][0]["text"] for _ in range(5)]
+    assert "PIN incorrecto" in textos[0] and "Demasiados PIN incorrectos" in textos[4]
+    assert "203.0.113.7" in main._castigo and "mcp" not in main._castigo

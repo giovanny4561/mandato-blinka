@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from app import registro
+from app import main, registro
 from app.modelos import Decision, Extraccion, ResultadoRegla
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -23,6 +23,8 @@ def entorno(tmp_path, monkeypatch):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     monkeypatch.delenv("AI_GATEWAY_API_KEY", raising=False)
     shutil.copy(RAIZ / "data" / "mandato.json", tmp_path / "mandato.json")
+    monkeypatch.setattr(main, "_fallos", {})  # los PIN malos de una prueba no castigan a la siguiente
+    monkeypatch.setattr(main, "_castigo", {})
     if os.getenv("DATABASE_URL"):  # pruebas contra Postgres real: cada test parte de tabla vacía
         registro.reiniciar()
     return tmp_path

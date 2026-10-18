@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import UploadFile
 from fastapi.concurrency import run_in_threadpool
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from pydantic import Field
@@ -38,13 +38,14 @@ async def procesar_factura(
     nombre_archivo: Annotated[str, Field(description="Nombre del archivo con su extensión: pdf, png, jpg, jpeg, xml, eml o txt")],
     contenido_base64: Annotated[str, Field(description="Contenido del archivo en base64 (máximo 5 MB ya decodificado)")],
     pin: Annotated[str, Field(description="PIN de aprobador, operador o jurado (con cupo diario); sin un PIN válido no se procesa nada")],
+    ctx: Context = None,
 ) -> dict:
     """Sube una factura y la decide PAGAR, ESCALAR o FRENAR contra el mandato. Llama a los modelos (gasta créditos) y
     escribe una fila en el registro sellado, por eso exige un PIN (aprobador, operador o jurado con cupo diario). Devuelve la decisión, la regla decisiva,
     la explicación, el id, el sello y la extracción con cuenta e identificación tributaria enmascaradas."""
     from app import main  # aquí y no arriba: main importa este módulo para montar /mcp
 
-    rol = main.exigir_pin(pin, "procesar")
+    rol = main.exigir_pin(pin, "procesar", main.ip(_peticion(ctx)))
     try:
         contenido = base64.b64decode(contenido_base64, validate=True)
     except binascii.Error:
@@ -52,6 +53,14 @@ async def procesar_factura(
     doc = await main.leer_subida(UploadFile(io.BytesIO(contenido), filename=nombre_archivo))
     main.gastar_cupo(rol, 1)
     return main.publico(registro.obtener(await run_in_threadpool(main.procesar, doc)))
+
+
+def _peticion(ctx: Context | None):
+    """La petición HTTP detrás de la llamada; None por el cliente en memoria o en una llamada directa."""
+    try:
+        return ctx.request_context.request
+    except (AttributeError, ValueError):
+        return None
 
 
 @servidor.tool(annotations=LECTURA)
