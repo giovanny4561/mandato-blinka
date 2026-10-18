@@ -144,7 +144,7 @@ periodo, tolerancias de conciliación, acuerdos vigentes y umbrales de JEV. Se e
 | ID | Control | Si falla |
 |---|---|---|
 | R00 | Legible y completa | ESCALAR |
-| R01 | Beneficiario en el maestro | **FRENAR** |
+| R01 | Beneficiario en el maestro y fuera de la lista SDN de OFAC | **FRENAR** |
 | R02 | Cuenta igual a la del maestro (suplantación de proveedor) | **FRENAR**, nunca descartable |
 | R03 | Moneda del acuerdo | ESCALAR |
 | R04 | Duplicado exacto (proveedor + número, o mismo archivo) | **FRENAR** |
@@ -161,6 +161,23 @@ periodo, tolerancias de conciliación, acuerdos vigentes y umbrales de JEV. Se e
 | J02 | JEV: no parece una factura | ESCALAR |
 | J03 | JEV: señales de riesgo del pago | ESCALAR / **FRENAR** |
 | J04 | JEV: concepto coincide con lo acordado | ESCALAR |
+
+### Lista de sanciones OFAC (dentro de R01)
+
+R01 también frena a quien figura en la lista SDN de OFAC (Departamento del Tesoro de EE. UU.).
+`scripts/actualizar_ofac.py` descarga la lista oficial de `sanctionslistservice.ofac.treas.gov` y guarda en
+`data/ofac_sdn.txt` 19.429 nombres normalizados (alfanumérico en mayúsculas, sin tildes). La copia del repositorio es
+del 17 de octubre de 2026; la cabecera del archivo dice la fecha y la fuente.
+
+- R01 compara el proveedor del mandato y el nombre que leyó el extractor. Si alguno coincide, frena con «figura en la
+  lista de sanciones OFAC (SDN)».
+- Un mandato con un proveedor de la lista no se guarda: el validador lo rechaza con el mismo motivo.
+- La coincidencia es exacta sobre el nombre normalizado. Atrapa «Banco Nacional de Cuba» con puntos, tildes o
+  minúsculas, pero no «Banco Nacional Cuba» ni un nombre en otro orden, y no carga los alias (`alt.csv`). Una búsqueda
+  difusa atraparía esas variantes y también homónimos y nombres cortos (la lista trae barcos llamados «ACE» o «IVY»),
+  y cada falso positivo terminaría en la cola de una persona.
+- La app lee la lista una vez al arrancar, de `DATA_DIR` o de `data/`. Sin el archivo, R01 funciona como antes. Siguen
+  siendo 18 controles.
 
 ### JEV
 
@@ -184,7 +201,8 @@ cp .env.example .env          # OPENROUTER_API_KEY obligatoria; TYPESAFE_API_KEY
 uv sync
 uv run python scripts/generar_facturas.py     # regenera el set simulado (determinista)
 uv run uvicorn app.main:app --reload          # http://127.0.0.1:8000
-uv run pytest                                  # 219 pruebas, todas offline
+uv run pytest                                  # 237 pruebas, todas offline
+uv run python scripts/actualizar_ofac.py      # baja la lista SDN de OFAC → data/ofac_sdn.txt
 uv run python scripts/evaluar.py              # corrida real sobre los 24 casos → data/resultados.json
 ```
 
@@ -198,7 +216,7 @@ El `Dockerfile` arranca `uvicorn` con 1 worker (el candado de decisión vive en 
 - `/bandeja` subir una o varias facturas (PDF, imagen, XML de la DIAN o CFDI, correo o chat; hasta 50 por vez) o procesar el set de demostración, con PIN; trae facturas de muestra para descargar y probar
 - `/decisiones` y `/decisiones/{id}` registro y detalle: extracción, 18 controles, probabilidades de JEV, acciones humanas
 - `/pendientes` aprobar o rechazar escaladas con PIN
-- `/api/metricas`, `/api/decisiones`, `/api/decisiones.csv` (registro para auditoría o Excel), `/api/decisiones/{id}/x402`, `/api/integridad`, `/api/anclajes`, `POST /api/procesar` (multipart) y `/health`
+- `/api/metricas`, `/api/decisiones`, `/api/decisiones.csv` (registro para auditoría o Excel), `/api/decisiones/{id}/x402`, `/api/decisiones/{id}/pain001` (ISO 20022), `/api/integridad`, `/api/anclajes`, `POST /api/procesar` (multipart) y `/health`
 
 ## Servidor MCP
 
@@ -215,7 +233,8 @@ Streamable HTTP sin sesión: **`https://mandato-production.up.railway.app/mcp`**
 | `mandato_resumen()` | Límites, proveedores con su riel y tasas de referencia |
 
 Todo es de solo lectura salvo `procesar_factura`. Cuentas e identificaciones tributarias van enmascaradas y la factura
-pasa por la misma cuarentena que una subida por la web.
+pasa por la misma cuarentena que una subida por la web. Si la lectura o la decisión fallan por dentro, `procesar_factura`
+responde «No se pudo leer o decidir esta factura; no se registró nada.» y guarda el detalle en el log del servidor.
 
 ```bash
 claude mcp add --transport http mandato https://mandato-production.up.railway.app/mcp
@@ -397,6 +416,12 @@ estándar (`app/rieles.py`): un maestro con una CLABE o un IBAN mal escrito se r
   moneda. Un mandato con un proveedor en una moneda sin tasa se rechaza.
 - **Orden de pago simulada para todos los rieles** en el detalle y en `GET /api/decisiones/{id}/orden`: riel, moneda,
   monto y beneficiario del maestro (nunca el de la factura). Para USDC en Base la orden sale además en formato x402.
+- **pain.001 para el banco.** Si el proveedor cobra por ACH, wire, SWIFT o SEPA, `GET /api/decisiones/{id}/pain001` y el
+  enlace «Descargar pain.001 (ISO 20022)» del detalle entregan la orden como pain.001.001.09 (Customer Credit Transfer
+  Initiation), el XML que un banco carga: BIC si es SWIFT, ABA (`USABA`) si es ACH o wire, IBAN si la cuenta lo es, el
+  sello de la decisión como `EndToEndId` y el número de factura en el concepto. La cuenta del deudor dice `SIMULADA` y
+  Mandato no envía el archivo a ningún banco. Lleva la cuenta completa del maestro porque el banco la necesita; con datos
+  reales iría detrás de un PIN, igual que el JSON del mandato en `/mandato`. Los demás rieles responden 404.
 - La demo usa 9 de estos rieles: SWIFT, ACH, wire, Bre-B (COP), SPEI (MXN), transferencia en Chile (CLP) y Perú (PEN),
   ruta local en USD (Perú) y USDC en Base, Polygon y Solana.
 - PSE solo sirve para recibir y la tarjeta Visa es para gastos: ninguno paga facturas a proveedores.
@@ -425,7 +450,8 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
   - `APROBADOR_PIN` (aprobador): todo.
   - `OPERADOR_PIN` (operador): subir y procesar facturas, el set de demostración y anclar.
   - `JURADO_PIN` (jurado): subir y procesar facturas y el set, hasta `JURADO_CUPO` facturas por día en hora de Bogotá (60 por defecto; al pasarse, 429). No aprueba ni rechaza pendientes ni edita el mandato o las reglas.
-  Un rol sin permiso recibe 403 con el motivo («Tu rol (jurado) no puede aprobar ni rechazar pagos»). Quién aprobó queda en la fila humana sin cambiar el esquema sellado: la nota empieza por el rol (`[aprobador] …`) y la explicación dice «Aprobada por el aprobador». El cupo del jurado vive en memoria y se reinicia con cada deploy. Suficiente para la demo, no para producción (ahí: usuarios con nombre, doble aprobación, cupo en la base y tope de intentos).
+  Un rol sin permiso recibe 403 con el motivo («Tu rol (jurado) no puede aprobar ni rechazar pagos»). Quién aprobó queda en la fila humana sin cambiar el esquema sellado: la nota empieza por el rol (`[aprobador] …`) y la explicación dice «Aprobada por el aprobador». El cupo del jurado vive en memoria y se reinicia con cada deploy. Suficiente para la demo, no para producción (ahí: usuarios con nombre, doble aprobación, y cupo e intentos en la base).
+- Cinco PIN incorrectos en 15 minutos desde una IP la castigan 15 minutos: toda ruta con PIN le responde 429 («Demasiados PIN incorrectos… Espera N minutos»), aunque traiga el PIN correcto. La IP sale de `X-Real-IP`, que pone el proxy de Railway; el MCP cuenta por IP cuando llega por HTTP y con la clave `mcp` cuando no la hay. El contador vive en memoria y se reinicia con cada deploy.
 - `/api/decisiones` enmascara cuenta y tax id; el texto completo de la factura sí viaja a los proveedores de modelos (OpenRouter con `data_collection: deny`, TypeSafe) para extraerla.
 - El remitente de un correo (`From`) es falsificable: R13 es una señal, no una prueba (no hay SPF/DKIM).
 - El shim de JEV sobre un LLM devuelve probabilidades extremas (0 o 1); las cifras publicadas son con JEV real, que da probabilidades calibradas.
