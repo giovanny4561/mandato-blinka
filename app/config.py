@@ -112,7 +112,12 @@ def jev_llm_modelo() -> str:
     return os.getenv("JEV_LLM_MODELO", "google/gemini-2.5-flash")
 
 
-def aprobador_pin() -> str:
-    """PIN de aprobador. Vacío, el de ejemplo o menos de 6 caracteres → "" (toda acción queda deshabilitada)."""
-    pin = os.getenv("APROBADOR_PIN", "")
-    return pin if len(pin) >= 6 and pin != "cambiar-esto" else ""
+def pines() -> dict[str, str]:
+    """PIN por rol. Vacío, el de ejemplo o menos de 6 caracteres → "" (ese rol queda deshabilitado)."""
+    pines = {rol: os.getenv(f"{rol.upper()}_PIN", "") for rol in ("aprobador", "operador", "jurado")}
+    return {rol: pin if len(pin) >= 6 and pin != "cambiar-esto" else "" for rol, pin in pines.items()}
+
+
+def jurado_cupo() -> int:
+    """Facturas que el jurado puede procesar por día (Bogotá)."""
+    return int(os.getenv("JURADO_CUPO", "60"))

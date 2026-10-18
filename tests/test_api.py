@@ -229,3 +229,71 @@ def test_muestras_solo_de_la_lista(entorno):
         assert c.get("/muestras/F08_cambio_cuenta.pdf").status_code == 200
         assert c.get("/muestras/mandato.json").status_code == 404
         assert c.get("/muestras/..%2Fmandato.json").status_code == 404
+
+
+# ---------- roles: aprobador, operador y jurado ----------
+from app import main
+
+LIMITES = {"tope_por_pago": "10000", "umbral_aprobacion_humana": "5000", "presupuesto": "60000",
+           "exigir_acuerdo_desde": "3000", "tolerancia_pct": "5"}
+
+
+@pytest.fixture
+def roles(monkeypatch):
+    monkeypatch.setenv("OPERADOR_PIN", "222222")
+    monkeypatch.setenv("JURADO_PIN", "333333")
+    monkeypatch.setattr(main, "_cupo", {"dia": "", "usadas": 0})
+
+
+def test_jurado_procesa_pero_no_aprueba_ni_edita(simulados, roles):
+    esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08"))
+    with TestClient(app) as c:
+        r = c.post("/api/procesar", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "333333"})
+        assert r.status_code == 200 and r.json()["decision"] == "PAGAR"
+        r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "333333", "nota": ""})
+        assert r.status_code == 403 and "Tu rol (jurado) no puede aprobar" in r.json()["detail"]
+        assert c.post(f"/pendientes/{esc}/resolver", data={"accion": "rechazar", "pin": "333333"}).status_code == 403
+        bueno = mod_mandato.cargar().model_dump_json()
+        assert c.post("/mandato", data={"json": bueno, "pin": "333333"}).status_code == 403
+        assert c.post("/mandato/limites", data=LIMITES | {"pin": "333333"}).status_code == 403
+        assert c.post("/api/anclajes", data={"pin": "333333"}).status_code == 403
+    assert registro.pendientes()[0].id == esc
+
+
+def test_cupo_del_jurado_devuelve_429(simulados, roles, monkeypatch):
+    monkeypatch.setenv("JURADO_CUPO", "1")
+    with TestClient(app) as c:
+        assert c.post("/api/trabajos", files={"archivos": ("F04.txt", CHAT, "text/plain")}, data={"pin": "333333"}).status_code == 200
+        r = c.post("/bandeja", files={"archivos": ("F05.txt", CHAT, "text/plain")}, data={"pin": "333333"})
+        assert r.status_code == 429 and "1 de sus 1 facturas de hoy" in r.json()["detail"]
+        assert c.post("/bandeja", files={"archivos": ("F06.txt", CHAT, "text/plain")}, data={"pin": "222222"},
+                      follow_redirects=False).status_code == 303  # el operador no tiene cupo
+
+
+def test_operador_procesa_y_ancla_pero_no_aprueba(simulados, roles):
+    with TestClient(app) as c:
+        assert c.post("/api/anclajes", data={"pin": "222222"}).status_code == 409  # permitido; aún no hay cabeza
+        assert c.post("/api/procesar", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": "222222"}).status_code == 200
+        esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08", factura_hash="otra"))
+        r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "222222", "nota": ""})
+        assert r.status_code == 403 and "Tu rol (operador) no puede aprobar" in r.json()["detail"]
+        assert c.post("/mandato/limites", data=LIMITES | {"pin": "222222"}).status_code == 403
+
+
+def test_resolver_guarda_el_rol_en_la_nota(roles):
+    esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08"))
+    with TestClient(app) as c:
+        r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "123456", "nota": "ok CFO"}, follow_redirects=False)
+    h = registro.obtener(int(r.headers["location"].rsplit("/", 1)[1]))
+    assert h.nota == "[aprobador] ok CFO" and h.explicacion.startswith("Aprobada por el aprobador")
+    assert registro.verificar()["integro"]
+
+
+def test_pin_debil_de_operador_o_jurado_sigue_deshabilitado(simulados, monkeypatch):
+    for var in ("OPERADOR_PIN", "JURADO_PIN"):
+        for malo in ("cambiar-esto", "12345"):
+            monkeypatch.setenv(var, malo)
+            with TestClient(app) as c:
+                r = c.post("/api/procesar", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": malo})
+                assert r.status_code == 403 and r.json()["detail"] == "PIN incorrecto"
+        monkeypatch.delenv(var)

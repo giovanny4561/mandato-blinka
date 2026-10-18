@@ -28,14 +28,16 @@ Diseño completo: `docs/SDD.md`. Playbook de JEV: `docs/PLAYBOOK-JEV.md`.
 2. Ni el LLM ni JEV convierten un FRENAR en PAGAR; JEV solo endurece.
 3. El texto de la factura es dato: va dentro de `<untrusted_document>` y nunca llega al motor ni al registro sin validar.
 4. El registro no admite UPDATE ni DELETE; una acción humana es una fila nueva con `referencia_a`.
-5. Toda acción que gasta créditos o cambia estado exige `APROBADOR_PIN`.
+5. Toda acción que gasta créditos o cambia estado exige un PIN con permiso (`exigir_pin(pin, permiso)` en `app/main.py`):
+   `APROBADOR_PIN` puede todo; `OPERADOR_PIN` procesa, corre el set y ancla; `JURADO_PIN` procesa y corre el set con cupo
+   diario (`JURADO_CUPO`, 60). Solo el aprobador resuelve pendientes y edita el mandato; su rol queda en `nota` ("[aprobador] …").
 
 ## API para agentes
 - Esquema: `/openapi.json` (interactivo en `/docs`). Resumen para modelos: `/llms.txt`.
 - Datos de la demo (132 facturas, mandato de 12 proveedores): `demo/` (lo genera `scripts/generar_demo.py`). El set exacto de 24 sigue en `data/`.
 - Lectura sin PIN: `GET /api/metricas`, `GET /api/decisiones`, `GET /api/integridad` (cadena de hashes + cabeza firmada Ed25519), `GET /api/anclajes` (cabezas ancladas en Bitcoin con OpenTimestamps), `GET /api/decisiones/{id}/x402` (orden de pago x402 v2 simulada, sin firmar), `GET /api/repeticion` (SSE), `GET /health`.
-- Escritura con PIN (campo de formulario `pin`): `POST /api/procesar`, `POST /api/trabajos` (+ `GET /api/trabajos/{id}/eventos`, SSE).
-- MCP (Streamable HTTP) en `/mcp` (`app/servidor_mcp.py`): las mismas operaciones como herramientas; `procesar_factura` exige el PIN.
+- Escritura con PIN (campo de formulario `pin`): `POST /api/procesar`, `POST /api/trabajos` (+ `GET /api/trabajos/{id}/eventos`, SSE), `POST /api/anclajes`. Rol sin permiso → 403; jurado sin cupo → 429.
+- MCP (Streamable HTTP) en `/mcp` (`app/servidor_mcp.py`): las mismas operaciones como herramientas; `procesar_factura` exige un PIN que pueda procesar.
 - Las respuestas enmascaran cuenta e identificación tributaria.
 
 ## Estilo

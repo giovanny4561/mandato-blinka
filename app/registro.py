@@ -247,8 +247,8 @@ def pendientes(db: Destino = None) -> list[Decision]:
     return [_a_decision(r) for r in filas]
 
 
-def resolver(id_escalada: int, aprobar: bool, nota: str, db: Destino = None) -> int:
-    """Una persona aprueba (PAGAR) o rechaza (FRENAR) una escalada. Fila nueva, nunca edición."""
+def resolver(id_escalada: int, aprobar: bool, nota: str, db: Destino = None, rol: str = "aprobador") -> int:
+    """Una persona aprueba (PAGAR) o rechaza (FRENAR) una escalada. Fila nueva, nunca edición; el rol va en la nota."""
     base = obtener(id_escalada, db)
     if base is None or base.decision != "ESCALAR" or base.decidido_por != "agente":
         raise ValueError("solo se resuelven escaladas del agente")
@@ -257,8 +257,8 @@ def resolver(id_escalada: int, aprobar: bool, nota: str, db: Destino = None) -> 
     # El índice único sobre referencia_a cierra la carrera de dos aprobaciones simultáneas.
     nueva = base.model_copy(update={
         "id": None, "ts": "", "decision": "PAGAR" if aprobar else "FRENAR",
-        "decidido_por": "humano", "referencia_a": id_escalada, "nota": nota,
-        "explicacion": ("Aprobada por una persona" if aprobar else "Rechazada por una persona")
+        "decidido_por": "humano", "referencia_a": id_escalada, "nota": f"[{rol}] {nota}".strip(),
+        "explicacion": ("Aprobada" if aprobar else "Rechazada") + f" por el {rol}"
         + f" tras la escalada #{id_escalada} ({base.regla_decisiva}). Nota: {nota or '—'}",
         "costo_usd": 0.0, "latencia_ms": 0,
     })

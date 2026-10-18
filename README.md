@@ -206,7 +206,7 @@ Streamable HTTP sin sesión: **`https://mandato-production.up.railway.app/mcp`**
 
 | Herramienta | Qué hace |
 |---|---|
-| `procesar_factura(nombre_archivo, contenido_base64, pin)` | Sube una factura y la decide, igual que `POST /api/procesar`. **Exige el PIN** |
+| `procesar_factura(nombre_archivo, contenido_base64, pin)` | Sube una factura y la decide, igual que `POST /api/procesar`. **Exige un PIN** de aprobador, operador o jurado (con cupo) |
 | `consultar_decision(id)` · `listar_decisiones(limite)` | Una decisión o las últimas (máximo 100), con controles, JEV y explicación |
 | `metricas()` · `integridad()` | Totales y autonomía · cadena de hashes con la cabeza firmada en Ed25519 |
 | `orden_de_pago(id)` | Orden simulada por el riel del proveedor y, si cobra en USDC en Base, la orden x402 |
@@ -396,7 +396,11 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
   fraude. Mandato detecta que un pago **se sale del mandato** y lo frena o lo escala; las "señales de
   riesgo" de JEV endurecen la decisión.
 - Subidas limitadas a 5 MB y a PDF/PNG/JPG/EML/TXT; salida del LLM validada campo por campo; plantillas con autoescape.
-- Toda acción que gasta llave o cambia estado (subir factura, procesar la demo, aprobar o rechazar, editar el mandato) exige un PIN de operador (≥ 6 caracteres, comparación en tiempo constante; sin PIN configurado la app es de solo lectura). Suficiente para la demo, no para producción (ahí: usuarios, roles, doble aprobación y tope de intentos).
+- Toda acción que gasta llave o cambia estado exige un PIN, y cada PIN es un rol (≥ 6 caracteres, comparación en tiempo constante; vacío o `cambiar-esto` deshabilita ese rol; sin ningún PIN la app es de solo lectura):
+  - `APROBADOR_PIN` (aprobador): todo.
+  - `OPERADOR_PIN` (operador): subir y procesar facturas, el set de demostración y anclar.
+  - `JURADO_PIN` (jurado): subir y procesar facturas y el set, hasta `JURADO_CUPO` facturas por día en hora de Bogotá (60 por defecto; al pasarse, 429). No aprueba ni rechaza pendientes ni edita el mandato o las reglas.
+  Un rol sin permiso recibe 403 con el motivo («Tu rol (jurado) no puede aprobar ni rechazar pagos»). Quién aprobó queda en la fila humana sin cambiar el esquema sellado: la nota empieza por el rol (`[aprobador] …`) y la explicación dice «Aprobada por el aprobador». El cupo del jurado vive en memoria y se reinicia con cada deploy. Suficiente para la demo, no para producción (ahí: usuarios con nombre, doble aprobación, cupo en la base y tope de intentos).
 - `/api/decisiones` enmascara cuenta y tax id; el texto completo de la factura sí viaja a los proveedores de modelos (OpenRouter con `data_collection: deny`, TypeSafe) para extraerla.
 - El remitente de un correo (`From`) es falsificable: R13 es una señal, no una prueba (no hay SPF/DKIM).
 - El shim de JEV sobre un LLM devuelve probabilidades extremas (0 o 1); las cifras publicadas son con JEV real, que da probabilidades calibradas.

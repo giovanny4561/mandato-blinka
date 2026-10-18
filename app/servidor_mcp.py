@@ -1,6 +1,6 @@
 """Servidor MCP: las operaciones de /api como herramientas para agentes externos (Streamable HTTP en /mcp).
 
-Lectura libre; procesar_factura exige el PIN de operador, igual que POST /api/procesar. Las respuestas enmascaran
+Lectura libre; procesar_factura exige un PIN con permiso de procesar, igual que POST /api/procesar. Las respuestas enmascaran
 cuenta e identificación tributaria, y la factura pasa por la misma cuarentena que una subida por la web.
 """
 import base64
@@ -37,19 +37,20 @@ LECTURA = ToolAnnotations(readOnlyHint=True)
 async def procesar_factura(
     nombre_archivo: Annotated[str, Field(description="Nombre del archivo con su extensión: pdf, png, jpg, jpeg, xml, eml o txt")],
     contenido_base64: Annotated[str, Field(description="Contenido del archivo en base64 (máximo 5 MB ya decodificado)")],
-    pin: Annotated[str, Field(description="PIN de operador; sin el PIN correcto no se procesa nada")],
+    pin: Annotated[str, Field(description="PIN de aprobador, operador o jurado (con cupo diario); sin un PIN válido no se procesa nada")],
 ) -> dict:
     """Sube una factura y la decide PAGAR, ESCALAR o FRENAR contra el mandato. Llama a los modelos (gasta créditos) y
-    escribe una fila en el registro sellado, por eso exige el PIN de operador. Devuelve la decisión, la regla decisiva,
+    escribe una fila en el registro sellado, por eso exige un PIN (aprobador, operador o jurado con cupo diario). Devuelve la decisión, la regla decisiva,
     la explicación, el id, el sello y la extracción con cuenta e identificación tributaria enmascaradas."""
     from app import main  # aquí y no arriba: main importa este módulo para montar /mcp
 
-    main.exigir_pin(pin)
+    rol = main.exigir_pin(pin, "procesar")
     try:
         contenido = base64.b64decode(contenido_base64, validate=True)
     except binascii.Error:
         raise ValueError("contenido_base64 no es base64 válido")
     doc = await main.leer_subida(UploadFile(io.BytesIO(contenido), filename=nombre_archivo))
+    main.gastar_cupo(rol, 1)
     return main.publico(registro.obtener(await run_in_threadpool(main.procesar, doc)))
 
 
