@@ -32,7 +32,7 @@ necesita a una persona.
 </table>
 
 > Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
-> Demo en vivo y video (2:24): enlaces y PIN en la entrega de HackRadar · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
+> Demo en vivo y video (2:25): enlaces en la entrega de HackRadar · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
 ---
 
@@ -467,6 +467,9 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
   fraude. Mandato detecta que un pago **se sale del mandato** y lo frena o lo escala; las "señales de
   riesgo" de JEV endurecen la decisión.
 - Subidas limitadas a 5 MB y a PDF/PNG/JPG/EML/TXT; salida del LLM validada campo por campo; plantillas con autoescape.
+- La demo pública corre con `SIN_PIN=1`: nadie escribe PIN, todos entran como visitante y los campos de PIN desaparecen de las
+  páginas; cada IP procesa hasta `VISITANTE_CUPO` facturas por día (30) dentro de un tope común de `VISITANTES_TOPE` (300). Sin la
+  variable rige lo que sigue.
 - Toda acción que gasta llave o cambia estado exige un PIN, y cada PIN es un rol (≥ 6 caracteres, comparación en tiempo constante; vacío o `cambiar-esto` deshabilita ese rol; sin ningún PIN la app es de solo lectura):
   - `APROBADOR_PIN` (aprobador): todo.
   - `OPERADOR_PIN` (operador): subir y procesar facturas, el set de demostración y anclar.
