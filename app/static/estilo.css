@@ -264,7 +264,7 @@ textarea.codigo { height: 380px; padding: 12px 14px; font: .8125rem/1.5 var(--mo
 .enlace-sutil:hover { text-decoration: underline; text-underline-offset: 3px; }
 .datos--tarjeta { background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra), 0 0 0 1px var(--linea); padding: 18px 22px; border-top: 0; margin-top: 12px; }
 @media (max-width: 1100px) { .tablero { grid-template-columns: 1fr; } }
-@media (max-width: 560px) { .tablero__cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; } .tablero__cifras dt { white-space: normal; } }
+@media (max-width: 560px) { .tablero__cifras { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; } .tablero__cifras dt, .tablero__cifras dd { white-space: normal; } .tablero__cifras dd { font-size: 1rem; overflow-wrap: anywhere; } }
 .riesgo { font-variant-numeric: tabular-nums; }
 .riesgo--alto { color: var(--ambar); font-weight: 520; }
 .muestras { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
