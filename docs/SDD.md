@@ -1,7 +1,7 @@
 # Mandato — Diseño del sistema (SDD v1.0)
 
 **Reto:** Blinka · "Agentes que pagan por la empresa" · Hackathon 30X Octubre 2026
-**Equipo:** AI MKT (Giovanny Marín, solo) · **Entrega:** domingo 18-oct-2026 12:00 m. (repo público + video + demo en vivo)
+**Autor:** Giovanny Marín (solo) · **Entrega:** domingo 18-oct-2026 12:00 m. (repo público + video + demo en vivo)
 **Fecha de este documento:** sábado 17-oct-2026 12:45
 
 ---

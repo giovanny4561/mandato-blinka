@@ -8,7 +8,7 @@
 
 **Demo (URL):** solo en el formulario de HackRadar
 
-**Video demo (URL, 2:43):** solo en el formulario de HackRadar; el archivo está en `app/static/mandato-demo.mp4`
+**Video demo (URL, 2:40):** solo en el formulario de HackRadar; el archivo está en `app/static/mandato-demo.mp4`
 
 ## Descripción (pegar en el formulario)
 

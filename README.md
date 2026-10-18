@@ -31,8 +31,8 @@ necesita a una persona.
 </tr>
 </table>
 
-> Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
-> Demo en vivo y video (2:43): enlaces en la entrega de HackRadar · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
+> Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Por Giovanny Marín.
+> Demo en vivo y video (2:40): enlaces en la entrega de HackRadar · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
 ---
 
