@@ -20,12 +20,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, reglas, rieles, servidor_mcp, x402
 from app import mandato as mod_mandato
@@ -114,6 +116,19 @@ app.add_route("/mcp", servidor_mcp.puerta)  # MCP por Streamable HTTP; ruta exac
 
 def render(request: Request, nombre: str, status: int = 200, **ctx):
     return plantillas.TemplateResponse(request, nombre, ctx, status_code=status)
+
+
+TITULOS_ERROR = {400: "No se pudo procesar", 403: "Sin permiso", 404: "No encontrado", 429: "Cupo agotado"}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def error_http(request: Request, exc: StarletteHTTPException):
+    """Un formulario HTML ve el error como página en español; /api, /mcp y los clientes JSON siguen recibiendo JSON."""
+    ruta = request.url.path
+    if ruta.startswith(("/api", "/mcp")) or "text/html" not in request.headers.get("accept", ""):
+        return await http_exception_handler(request, exc)
+    return render(request, "error.html", exc.status_code, titulo=TITULOS_ERROR.get(exc.status_code, "Algo falló"),
+                  mensaje=str(exc.detail), volver="/" + ruta.split("/")[1])  # /pendientes/5/resolver → /pendientes
 
 
 # permiso → (qué hace, roles que pueden)

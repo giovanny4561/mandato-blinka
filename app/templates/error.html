@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "macros.html" import icono %}
+{% block titulo %}{{ titulo }} · Mandato{% endblock %}
+{% block contenido %}
+<section class="vacio-estado" role="alert">
+  {{ icono('alto', 'vacio-estado__icono') }}
+  <h1>{{ titulo }}</h1>
+  <p>{{ mensaje }}</p>
+  <a class="boton" href="{{ volver }}">Volver</a>
+</section>
+{% endblock %}

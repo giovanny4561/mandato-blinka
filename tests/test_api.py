@@ -297,3 +297,22 @@ def test_pin_debil_de_operador_o_jurado_sigue_deshabilitado(simulados, monkeypat
                 r = c.post("/api/procesar", files={"archivo": ("F04.txt", CHAT, "text/plain")}, data={"pin": malo})
                 assert r.status_code == 403 and r.json()["detail"] == "PIN incorrecto"
         monkeypatch.delenv(var)
+
+
+HTML = {"Accept": "text/html,application/xhtml+xml"}
+
+
+def test_formulario_html_con_pin_sin_permiso_ve_una_pagina_de_error(simulados, roles, monkeypatch):
+    esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08"))
+    with TestClient(app) as c:
+        r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "333333"}, headers=HTML)
+        assert r.status_code == 403 and r.headers["content-type"].startswith("text/html")
+        assert "Tu rol (jurado) no puede aprobar ni rechazar pagos" in r.text and 'href="/pendientes"' in r.text
+        r = c.post("/mandato/limites", data=LIMITES | {"pin": "mal"}, headers=HTML)
+        assert r.status_code == 403 and "PIN incorrecto" in r.text and 'href="/mandato"' in r.text
+        monkeypatch.setenv("JURADO_CUPO", "0")
+        r = c.post("/bandeja", files={"archivos": ("F05.txt", CHAT, "text/plain")}, data={"pin": "333333"}, headers=HTML)
+        assert r.status_code == 429 and "Cupo agotado" in r.text and 'href="/bandeja"' in r.text
+        # la API y los clientes sin text/html siguen recibiendo JSON
+        assert c.post("/api/anclajes", data={"pin": "mal"}, headers=HTML).json() == {"detail": "PIN incorrecto"}
+        assert c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "pin": "mal"}).json() == {"detail": "PIN incorrecto"}

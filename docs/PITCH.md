@@ -42,7 +42,7 @@ suplantación por correo afectó al 74 % de las empresas.
 
 ## Los tres criterios del jurado (20 s)
 - Autonomía: el agente paga lo que cabe en el mandato y frena lo que lo viola sin pedir ayuda.
-- Seguridad: "PAGAR implica todas las reglas en orden" es una invariante. La prueban 218 tests y una arena de 1.056 ataques y el panel la recalcula en cada carga; el registro sellado prueba que nadie la reescribió después. El LLM extrae; las reglas deciden.
+- Seguridad: "PAGAR implica todas las reglas en orden" es una invariante. La prueban 219 tests y una arena de 1.056 ataques y el panel la recalcula en cada carga; el registro sellado prueba que nadie la reescribió después. El LLM extrae; las reglas deciden.
 - Explicabilidad: cada decisión cita la regla, la evidencia y un texto en español que sale de una plantilla.
 
 ## Hacia dónde va (20 s)
@@ -62,4 +62,4 @@ firmar, porque el reto excluye mover dinero. Con Blinka, esa firma y la liquidac
 5. ¿Le falta algo al entregable: repo público, demo en vivo, video, playbook de JEV, SDD?
 
 ## Cifras a mano
-Demo 132/132 con JEV real, 0 de 54 trampas pagadas, 71,2 % de autonomía, US$ 0,055, 14 s · set principal 24/24 de exactitud · 0 pagos fuera de reglas · 15 casos trampa y ninguno pagado · 62,5 % de autonomía · US$ 0,0116 el set de 24 con JEV real (US$ 0,0005 por factura) · 2,2 s por factura · arena: 1.056 ataques, 0 pagados · todos los rieles y 12 monedas de Blinka · set ciego 12/12 (0 pagos indebidos, 0 legítimas frenadas) · 218 tests, 94 % de cobertura · registro sellado (sha256 encadenado + Ed25519 + anclaje en Bitcoin con OpenTimestamps) · JEV: 70 a 500 ms y US$ 0,042 por millón de tokens.
+Demo 132/132 con JEV real, 0 de 54 trampas pagadas, 71,2 % de autonomía, US$ 0,055, 14 s · set principal 24/24 de exactitud · 0 pagos fuera de reglas · 15 casos trampa y ninguno pagado · 62,5 % de autonomía · US$ 0,0116 el set de 24 con JEV real (US$ 0,0005 por factura) · 2,2 s por factura · arena: 1.056 ataques, 0 pagados · todos los rieles y 12 monedas de Blinka · set ciego 12/12 (0 pagos indebidos, 0 legítimas frenadas) · 219 tests, 94 % de cobertura · registro sellado (sha256 encadenado + Ed25519 + anclaje en Bitcoin con OpenTimestamps) · JEV: 70 a 500 ms y US$ 0,042 por millón de tokens.

@@ -184,7 +184,7 @@ cp .env.example .env          # OPENROUTER_API_KEY obligatoria; TYPESAFE_API_KEY
 uv sync
 uv run python scripts/generar_facturas.py     # regenera el set simulado (determinista)
 uv run uvicorn app.main:app --reload          # http://127.0.0.1:8000
-uv run pytest                                  # 218 pruebas, todas offline
+uv run pytest                                  # 219 pruebas, todas offline
 uv run python scripts/evaluar.py              # corrida real sobre los 24 casos → data/resultados.json
 ```
 
