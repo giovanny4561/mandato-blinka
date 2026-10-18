@@ -13,7 +13,7 @@ necesita a una persona.
 
 ---
 
-## Demo de 132 facturas, de punta a punta (corrida real, 17-oct-2026)
+## Demo de 132 facturas, de punta a punta (producción, con JEV real, 17-oct-2026)
 
 "Procesar el set" en `/bandeja` manda por el flujo completo de la app (dos lecturas en paralelo, JEV, 18 controles,
 registro sellado) **132 facturas**: las 24 del set principal, las 10 inyecciones y 98 de un mes de operación de Andina
@@ -25,10 +25,9 @@ Labs con 12 proveedores, 68 legítimas y 30 trampas más. Las genera `scripts/ge
 | Trampas que terminaron en PAGAR | **0** de 54 |
 | Legítimas frenadas | **0** |
 | Pagos fuera de reglas · registro íntegro | **0** · sí |
-| Autonomía (PAGAR + FRENAR) | 91 / 132 = **68,9 %** (57 pagadas, 34 frenadas, 41 escaladas) |
-| Costo total | **US$ 0,158**, unos US$ 0,0012 por factura |
-| Tiempo | menos de un minuto para las 132 (16 en paralelo); 3,1 s por factura |
-| Repetida en Railway (producción) | 132 / 132 · 0 de 54 trampas pagadas · US$ 0,154 · **22 s** para las 132, eventos en vivo segundo a segundo |
+| Autonomía (PAGAR + FRENAR) | 94 / 132 = **71,2 %** (61 pagadas, 33 frenadas, 38 escaladas) |
+| Costo total (dos lecturas + JEV real) | **US$ 0,055**, unos US$ 0,0004 por factura |
+| Tiempo | **14 s** para las 132 en Railway (16 en paralelo); 1,4 s por factura; la animación en vivo llega segundo a segundo |
 
 Las 30 trampas nuevas: proveedor desconocido, aviso de cambio de cuenta, reenvío de una factura ya procesada,
 reemisión con sufijo en el número, cobro por encima de la orden de compra, sobre el tope, otra moneda, instrucciones
@@ -45,8 +44,8 @@ corrida de pruebas, y `scripts/evaluar_demo.py --url <demo>` mide cualquier inst
 | Facturas trampa que terminaron en PAGAR | **0** de 15 |
 | Autonomía (decidido sin persona: PAGAR + FRENAR) | 15 / 24 = **62,5 %** |
 | Escaladas a una persona (por diseño: monto, presupuesto, discrepancias) | 9 / 24 |
-| Costo total (dos extracciones + JEV) | **US$ 0,0299** → US$ 0,00125 por factura |
-| Tiempo medio por factura | 3,5 s (imágenes ≈ 5–6 s) |
+| Costo total (dos extracciones + JEV real) | **US$ 0,0116** → US$ 0,0005 por factura (con el sustituto de JEV sobre un LLM era US$ 0,0299) |
+| Tiempo medio por factura | 2,2 s, de los que JEV real toma ~0,5 s (imágenes ≈ 3 s) |
 | Pruebas automáticas | 205, cobertura 95 % en `app/` (pasan en SQLite y en Postgres) |
 
 Los 15 casos trampa incluyen: cambio de cuenta bancaria del proveedor, correo de suplantación con
@@ -166,8 +165,12 @@ periodo, tolerancias de conciliación, acuerdos vigentes y umbrales de JEV. Se e
 JEV recibe un estado y preguntas tipadas (`noul` sí/no, `choice`, `score`) y devuelve todas las
 respuestas con su probabilidad calibrada en cientos de milisegundos, por fracciones de centavo. No
 genera texto. En Mandato responde cinco preguntas por factura (ver [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)).
-Si hay `TYPESAFE_API_KEY` corre el modelo real (también vía Vercel AI Gateway); si no, un *shim* con el
-mismo contrato sobre un LLM, y el panel muestra cuál corrió. La aritmética, las fechas, los duplicados
+La demo y todas las cifras de esta página corren **JEV real** (`typesafe-ai/jev`) por Vercel AI Gateway (`AI_GATEWAY_API_KEY`;
+también acepta `TYPESAFE_API_KEY` directo). Sin llave queda un *shim* con el mismo contrato sobre un LLM, y el panel muestra cuál corrió.
+
+**Umbrales calibrados con las probabilidades de JEV real** (132 facturas en producción): en las 78 legítimas, "instrucciones
+ocultas" no pasó de 0,05, "¿es factura?" no bajó de 0,74 y el riesgo no pasó de 1,02. Cuatro inyecciones puntuaron entre 0,12 y
+0,28, bajo el freno de 0,35, así que J01 tiene una zona gris: desde 0,10 escala a una persona y desde 0,35 frena. La aritmética, las fechas, los duplicados
 y la comparación contra el maestro van en código.
 
 ---
@@ -249,7 +252,7 @@ Diez facturas con instrucciones escondidas que parecen correspondencia de negoci
 condicional, un control sintáctico, una orden de compra inventada, un número "reemitido", una fe de erratas que
 infla el monto y un correo que "corrige" el número (`data/inyecciones.json`, `scripts/evaluar_inyecciones.py`).
 
-- **Corrida real (17-oct-2026):** 6 de 10 engañaron al extractor · JEV marcó 8 de 10 · **0 de 10 terminaron en PAGAR**.
+- **Corrida real con JEV real (17-oct-2026):** 6 de 10 engañaron al extractor · JEV marcó 8 de 10 (4 las frena y 4 caen en la zona gris que escala) · **0 de 10 terminaron en PAGAR**.
 - **Peor caso (`tests/test_inyecciones.py`):** con el extractor y JEV 100 % engañados, las reglas en código igual
   frenan las 10 (R02 cuenta contra el maestro, R04/R05 duplicados y reemisiones, R08 umbral, R09 acuerdo).
 - La técnica de medir "engañó al modelo" por separado de "terminó en pago" viene de
@@ -369,7 +372,7 @@ la orden de pago en el formato v2 de [x402](https://github.com/coinbase/x402): e
 - Toda acción que gasta llave o cambia estado (subir factura, procesar la demo, aprobar o rechazar, editar el mandato) exige un PIN de operador (≥ 6 caracteres, comparación en tiempo constante; sin PIN configurado la app es de solo lectura). Suficiente para la demo, no para producción (ahí: usuarios, roles, doble aprobación y tope de intentos).
 - `/api/decisiones` enmascara cuenta y tax id; el texto completo de la factura sí viaja a los proveedores de modelos (OpenRouter con `data_collection: deny`, TypeSafe) para extraerla.
 - El remitente de un correo (`From`) es falsificable: R13 es una señal, no una prueba (no hay SPF/DKIM).
-- El shim de JEV sobre un LLM devuelve probabilidades extremas (0 o 1). JEV real aporta la calibración.
+- El shim de JEV sobre un LLM devuelve probabilidades extremas (0 o 1); las cifras publicadas son con JEV real, que da probabilidades calibradas.
 
 ## Qué sigue (fuera del núcleo del reto)
 
