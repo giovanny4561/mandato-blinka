@@ -44,7 +44,7 @@
   const $ = (id) => document.getElementById(id);
   const cont = { PAGAR: 0, ESCALAR: 0, FRENAR: 0 };
   let total = 0, decididas = 0, leyendo = 0, t0 = 0, fuente = null;
-  const cola = []; let animando = false;
+  const cola = []; let animando = false, ronda = 0;  // ronda: cada escucha nueva descarta lo que quedó de la anterior
   const formato = (v) => v == null ? "—" : new Intl.NumberFormat("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
   const NOMBRE = { PAGAR: "Pagada", ESCALAR: "Por revisar", FRENAR: "Frenada" };
 
@@ -93,11 +93,12 @@
 
   async function drenar() {
     if (animando) return; animando = true;
-    while (cola.length) await animarDecision(cola.shift());
+    while (cola.length) { const ev = cola.shift(); if (ev.ronda === ronda) await animarDecision(ev); }
     animando = false;
   }
 
   function mostrar(ev) {
+    if (ev.ronda !== ronda) return;  // animación de una escucha anterior que terminó tarde
     cont[ev.decision]++; decididas++; progreso();
     $("c-pagar").textContent = cont.PAGAR; $("c-escalar").textContent = cont.ESCALAR; $("c-frenar").textContent = cont.FRENAR;
     $("actual-vacio").hidden = true; $("actual").hidden = false;
@@ -121,10 +122,11 @@
   }
 
   function reiniciar(modo) {
-    fuente && fuente.close();
+    fuente && fuente.close(); ronda++;
     cont.PAGAR = cont.ESCALAR = cont.FRENAR = 0; total = decididas = leyendo = 0; t0 = performance.now(); cola.length = 0;
     ["c-pagar", "c-escalar", "c-frenar"].forEach((id) => ($(id).textContent = "0"));
     $("lista").innerHTML = ""; $("ritmo").textContent = ""; $("modo").textContent = modo;
+    $("actual").hidden = true; $("actual-vacio").hidden = false;
   }
 
   function escuchar(url, modo) {
@@ -135,11 +137,18 @@
       if (ev.tipo === "inicio") { total = ev.total; progreso(); }
       else if (ev.tipo === "recibida") alRecibir(ev);
       else if (ev.tipo === "leida") alLeer(ev);
-      else if (ev.tipo === "decidida") { cola.push(ev); drenar(); }
+      else if (ev.tipo === "decidida") { ev.ronda = ronda; cola.push(ev); drenar(); }
       else if (ev.tipo === "error") { decididas++; leyendo = Math.max(0, leyendo - 1); progreso(); }
       else if (ev.tipo === "fin") {
-        fuente.close(); $("modo").textContent = modo === "Repitiendo el registro" ? "Repetición terminada" : "Terminado";
-        if (modo !== "Repitiendo el registro") setTimeout(() => location.assign("/"), 2500);  // resumen y registro al día
+        fuente.close();
+        const yo = ronda;
+        const cerrar = () => {  // cuando se vea la última decisión: resumen y registro al día
+          if (yo !== ronda) return;
+          if (animando || cola.length) return setTimeout(cerrar, 300);
+          $("modo").textContent = modo === "Repitiendo el registro" ? "Repetición terminada" : "Terminado";
+          if (modo !== "Repitiendo el registro") setTimeout(() => location.assign("/"), 2500);
+        };
+        cerrar();
       }
     };
     fuente.onerror = () => { $("modo").textContent = "Conexión cerrada"; fuente.close(); };
