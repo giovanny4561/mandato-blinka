@@ -38,7 +38,7 @@ LECTURA = ToolAnnotations(readOnlyHint=True)
 async def procesar_factura(
     nombre_archivo: Annotated[str, Field(description="Nombre del archivo con su extensión: pdf, png, jpg, jpeg, xml, eml o txt")],
     contenido_base64: Annotated[str, Field(description="Contenido del archivo en base64 (máximo 5 MB ya decodificado)")],
-    pin: Annotated[str, Field(description="PIN de aprobador, operador o jurado (con cupo diario); sin un PIN válido no se procesa nada")],
+    pin: Annotated[str, Field(description="PIN de aprobador, operador o jurado (con cupo diario); en una demo abierta (SIN_PIN) se omite")] = "",
     ctx: Context = None,
 ) -> dict:
     """Sube una factura y la decide PAGAR, ESCALAR o FRENAR contra el mandato. Llama a los modelos (gasta créditos) y
@@ -53,7 +53,7 @@ async def procesar_factura(
         raise ValueError("contenido_base64 no es base64 válido")
     try:
         doc = await main.leer_subida(UploadFile(io.BytesIO(contenido), filename=nombre_archivo))
-        main.gastar_cupo(rol, 1)
+        main.gastar_cupo(rol, 1, main.ip(_peticion(ctx)))
         return main.publico(registro.obtener(await run_in_threadpool(main.procesar, doc)))
     except HTTPException:
         raise  # formato, tamaño o cupo: mensajes escritos para el cliente

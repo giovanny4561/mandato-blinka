@@ -29,8 +29,8 @@
       <p class="tenue" id="a-tolerancia">Diferencia aceptada frente al acuerdo</p></div>
   </div>
   <div class="reglas__pie">
-    <div class="campo campo--pin"><label for="pin-reglas">PIN</label>
-      <input id="pin-reglas" name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>
+    {% if pide_pin %}<div class="campo campo--pin"><label for="pin-reglas">PIN</label>
+      <input id="pin-reglas" name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>{% endif %}
     <button class="boton">Guardar reglas</button>
   </div>
 </form>
@@ -77,10 +77,10 @@
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
     <label for="json">Mandato en JSON. Se valida completo antes de guardar.</label>
     <textarea id="json" name="json" class="codigo" spellcheck="false">{{ json }}</textarea>
-    <div class="campo campo--pin">
+    {% if pide_pin %}<div class="campo campo--pin">
       <label for="pin-mandato">PIN</label>
       <input id="pin-mandato" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
-    </div>
+    </div>{% endif %}
     <button class="boton">Validar y guardar</button>
   </form>
 </details>

@@ -354,3 +354,24 @@ def test_los_pin_malos_de_hace_mas_de_15_minutos_no_cuentan(roles):
     with TestClient(app) as c:
         assert c.post("/api/anclajes", data={"pin": "mal"}).status_code == 403
         assert c.post("/api/anclajes", data={"pin": "222222"}).status_code == 409
+
+
+def test_sin_pin_nadie_escribe_pin_y_cada_ip_tiene_cupo(simulados, monkeypatch):
+    monkeypatch.setenv("SIN_PIN", "1")
+    monkeypatch.setenv("VISITANTE_CUPO", "1")
+    monkeypatch.setenv("VISITANTES_TOPE", "2")
+    monkeypatch.setattr(main, "_cupo", {"dia": "", "usadas": 0})
+    esc = registro.insertar(hacer_decision(decision="ESCALAR", regla_decisiva="R08"))
+    factura = lambda n: {"archivo": (f"F{n}.txt", CHAT, "text/plain")}
+    with TestClient(app) as c:
+        assert all('name="pin"' not in c.get(p).text for p in ("/", "/pendientes", "/mandato", "/bandeja"))
+        r = c.post("/api/procesar", files=factura(1))
+        assert r.status_code == 200 and r.json()["decision"] == "PAGAR"
+        r = c.post("/api/procesar", files=factura(2))
+        assert r.status_code == 429 and "1 de sus 1 facturas de hoy" in r.json()["detail"]
+        assert c.post("/api/procesar", files=factura(3), headers={"x-real-ip": "10.0.0.2"}).status_code == 200
+        r = c.post("/api/procesar", files=factura(4), headers={"x-real-ip": "10.0.0.3"})
+        assert r.status_code == 429 and "tope de facturas de hoy" in r.json()["detail"]
+        r = c.post(f"/pendientes/{esc}/resolver", data={"accion": "aprobar", "nota": "ok"}, follow_redirects=False)
+        assert r.status_code == 303
+    assert registro.obtener(int(r.headers["location"].rsplit("/", 1)[1])).nota == "[visitante] ok"

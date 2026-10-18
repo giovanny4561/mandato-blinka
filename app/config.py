@@ -118,6 +118,16 @@ def pines() -> dict[str, str]:
     return {rol: pin if len(pin) >= 6 and pin != "cambiar-esto" else "" for rol, pin in pines.items()}
 
 
+def sin_pin() -> bool:
+    """SIN_PIN=1 abre la demo: nadie escribe PIN y cada conexión tiene un cupo diario de facturas (visitante_cupo)."""
+    return os.getenv("SIN_PIN", "").strip().lower() in ("1", "true", "si", "sí")
+
+
+def visitante_cupo() -> tuple[int, int]:
+    """Sin PIN: facturas por IP y por día, y tope de todas las visitas juntas (Bogotá)."""
+    return int(os.getenv("VISITANTE_CUPO", "30")), int(os.getenv("VISITANTES_TOPE", "300"))
+
+
 def jurado_cupo() -> int:
     """Facturas que el jurado puede procesar por día (Bogotá)."""
     return int(os.getenv("JURADO_CUPO", "60"))

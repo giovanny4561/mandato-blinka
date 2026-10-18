@@ -16,19 +16,19 @@
       <label for="archivo">Archivos</label>
       <input id="archivo" type="file" name="archivos" multiple accept=".pdf,.png,.jpg,.jpeg,.xml,.eml,.txt" required>
     </div>
-    <div class="campo campo--pin">
+    {% if pide_pin %}<div class="campo campo--pin">
       <label for="pin-subir">PIN de operador</label>
       <input id="pin-subir" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
-    </div>
+    </div>{% endif %}
     <button class="boton">{{ icono('subir') }}Procesar</button>
   </form>
   <form class="tarjeta formulario" method="post" action="/bandeja/demo">
     <h2>Set de demostración</h2>
     <p class="tenue">El agente procesa en orden las {{ n_demo }} facturas simuladas, con {{ n_trampas }} casos trampa como el cambio de cuenta, las instrucciones ocultas y los duplicados. Corre en segundo plano y salta las que ya están en el registro.</p>
-    <div class="campo campo--pin">
+    {% if pide_pin %}<div class="campo campo--pin">
       <label for="pin-demo">PIN de operador</label>
       <input id="pin-demo" name="pin" type="password" inputmode="numeric" autocomplete="off" required>
-    </div>
+    </div>{% endif %}
     <button class="boton boton--secundario" {% if demo_en_curso %}disabled{% endif %}>{{ 'Procesando…' if demo_en_curso else 'Procesar el set' }}</button>
   </form>
 </div>

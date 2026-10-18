@@ -72,11 +72,11 @@
   <form id="subir" class="tarjeta franja">
     <div class="franja__grupo">
       <button class="boton boton--secundario" id="repetir" type="button" {% if not n_registro %}disabled{% endif %}>Repetir las {{ n_registro }} decisiones</button>
-      <p class="tenue">Sin modelos, sin PIN y sin costo.</p>
+      <p class="tenue">Sin modelos y sin costo.</p>
     </div>
     <div class="franja__grupo franja__grupo--procesar">
-      <div class="campo campo--pin"><label for="v-pin">PIN de operador</label>
-        <input id="v-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>
+      {% if pide_pin %}<div class="campo campo--pin"><label for="v-pin">PIN de operador</label>
+        <input id="v-pin" name="pin" type="password" inputmode="numeric" autocomplete="off" required></div>{% endif %}
       <div class="campo campo--crece"><label for="v-archivo">Facturas: PDF, imagen, XML (DIAN, CFDI), correo o chat</label>
         <input id="v-archivo" type="file" name="archivos" multiple accept=".pdf,.png,.jpg,.jpeg,.xml,.eml,.txt"></div>
       <button class="boton" id="v-subir">Procesar mis facturas</button>
