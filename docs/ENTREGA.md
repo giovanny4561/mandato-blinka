@@ -15,7 +15,7 @@
 Mandato es un agente de cuentas por pagar que lee facturas y decide PAGAR, ESCALAR o FRENAR dentro de un mandato que define la empresa: a quién se le paga, a qué cuenta, cuánto por pago y por mes, y contra qué acuerdo. Cuando la factura cabe en el mandato, el agente la paga sin pedir permiso. Cuando algo se sale, la frena o se la pasa a una persona y cita la regla que lo causó.
 
 Cómo decide:
-1. La factura llega por PDF, imagen, correo o chat. Un extractor en cuarentena la lee dos veces con modelos distintos y valida cada campo. Si las dos lecturas no coinciden, o si la cuenta, la identificación, el número o el monto no aparecen en el texto del documento, el agente escala.
+1. La factura llega por PDF, imagen, XML de la DIAN o CFDI, correo o chat. Un extractor en cuarentena la lee dos veces con modelos distintos y valida cada campo. Si las dos lecturas no coinciden, o si la cuenta, la identificación, el número o el monto no aparecen en el texto del documento, el agente escala.
 2. Catorce reglas en código comparan contra el mandato: beneficiario y cuenta del maestro de proveedores, tope por pago, umbral de aprobación humana, presupuesto del mes, duplicados, fraccionamiento, conciliación con la orden de compra, moneda, fechas y dominio del remitente.
 3. JEV real (TypeSafe, por Vercel AI Gateway) contesta preguntas tipadas con su probabilidad: si el documento trae instrucciones ocultas para el sistema, si es una factura, si ya está pagada, qué riesgo tiene el pago y si coincide con lo acordado.
 4. El motor consolida FRENAR > ESCALAR > PAGAR. Una regla puede frenar o escalar; ninguna aprueba, y JEV solo endurece. El LLM extrae y las reglas deciden.
@@ -39,6 +39,6 @@ Seguridad: "PAGAR implica las 18 reglas en orden" es una invariante. Los tests l
 
 Stack: Python, FastAPI, Postgres (Railway), OpenRouter (Gemini 2.5 Flash/Flash-Lite y GPT-4.1 mini/nano) y JEV vía API de TypeSafe o Vercel AI Gateway. Licencia MIT; patrón de cuarentena adaptado de anthropics/financial-services (Apache-2.0) y formato del mandato inspirado en AP2.
 
-Para probar: en la demo, Panel muestra las métricas y la integridad del registro, y Decisiones el registro completo; cada detalle muestra el recorrido de la factura paso a paso. En Mandato se cambian los límites con un formulario. Abre F16 (instrucciones ocultas) o F08 (cambio de cuenta) para ver por qué se frenaron. En Bandeja puedes subir tu propia factura con el PIN de operador.
+Para probar: la portada muestra la red En vivo, las cifras y la integridad del registro; Decisiones tiene el registro completo y cada detalle muestra el recorrido de la factura paso a paso. Abre F16 (instrucciones ocultas) o F08 (cambio de cuenta) para ver por qué se frenaron. Para subir tus propias facturas (PDF, imagen, XML de la DIAN o CFDI, correo o chat) usa el formulario de la portada con el PIN de jurado de esta entrega; en Bandeja hay facturas de ejemplo para descargar. Arena muestra los 1.056 ataques y Mandato, las reglas y el riel de Blinka de cada proveedor.
 
 Datos 100 % simulados. Mandato no mueve dinero, no abre cuentas y no decide cumplimiento ni fraude, tal como pide el reto.
