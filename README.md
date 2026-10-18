@@ -1,5 +1,7 @@
 # Mandato
 
+[![pruebas](https://github.com/giovanny4561/mandato-blinka/actions/workflows/pruebas.yml/badge.svg)](https://github.com/giovanny4561/mandato-blinka/actions/workflows/pruebas.yml)
+
 **Un agente de cuentas por pagar que paga sin pedir permiso cuando la factura cabe en el mandato de la empresa.**
 
 Mandato lee facturas que llegan por PDF, imagen, correo o chat y extrae los datos en cuarentena.
