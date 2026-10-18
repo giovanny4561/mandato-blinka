@@ -31,6 +31,7 @@
         <a href="/decisiones" {% if actual.startswith('/decisiones') %}aria-current="page"{% endif %}>Decisiones</a>
         <a href="/pendientes" {% if actual == '/pendientes' %}aria-current="page"{% endif %}>Pendientes{% if n_pendientes() %} <span class="contador">{{ n_pendientes() }}</span>{% endif %}</a>
         <a href="/mandato" {% if actual == '/mandato' %}aria-current="page"{% endif %}>Mandato</a>
+        <a href="/arena" {% if actual == '/arena' %}aria-current="page"{% endif %}>Arena</a>
       </nav>
       <a class="boton boton--chico" href="/bandeja">{{ icono('subir') }}Subir factura</a>
     </div>

@@ -3,7 +3,9 @@ import asyncio
 import csv
 import io
 import base64
+import functools
 import hashlib
+import importlib.util
 
 import anyio
 import hmac
@@ -25,7 +27,7 @@ from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
 from pydantic import ValidationError
 
-from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, rieles, servidor_mcp, x402
+from app import ancla, config, decisor, documentos, extractor, firma, flujo, motor, registro, reglas, rieles, servidor_mcp, x402
 from app import mandato as mod_mandato
 from app.modelos import Documento, Mandato
 
@@ -557,6 +559,20 @@ def detalle(request: Request, id_: int):
         raise HTTPException(404, "decisión no encontrada")
     return render(request, "detalle.html", d=d, acciones=registro.acciones_humanas(id_),
                   pago=rieles.orden(d, proveedor_de(d)), orden=orden_x402(d))
+
+
+@functools.cache
+def resultado_arena() -> dict:
+    """Corre scripts/arena.py una vez por proceso, en el primer pedido (medio segundo, sin modelos ni red)."""
+    spec = importlib.util.spec_from_file_location("arena", config.RAIZ / "scripts" / "arena.py")
+    arena = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(arena)
+    return arena.correr() | {"etiquetas": arena.ETIQUETAS}
+
+
+@app.get("/arena", response_class=HTMLResponse, include_in_schema=False)
+def ver_arena(request: Request):
+    return render(request, "arena.html", r=resultado_arena(), nombres=reglas.NOMBRES)
 
 
 @app.get("/pendientes", response_class=HTMLResponse, include_in_schema=False)

@@ -22,4 +22,5 @@ Las acciones que gastan créditos o cambian estado exigen un PIN de operador. La
 
 ## Optional
 - [Panel](/): vista humana con las métricas.
+- [Arena](/arena): más de mil facturas mutadas para violar el mandato, con extractor y JEV engañados; cuántas se pagaron (0) y qué regla frenó cada tipo de ataque.
 - [En vivo](/en-vivo): red de decisión animada.

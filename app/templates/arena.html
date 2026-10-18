@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "macros.html" import icono %}
+{% block titulo %}Arena · Mandato{% endblock %}
+{% block meta %}<meta name="description" content="{{ r.ataques }} facturas alteradas para violar el mandato, con extractor y JEV engañados. Pagadas: {{ r.pagados }}.">{% endblock %}
+{% block contenido %}
+<div class="encabezado">
+  <h1>Arena</h1>
+  <p class="bajada">Tomamos las {{ r.bases }} facturas legítimas de la demo que el agente pagaría y alteramos cada una para violar el mandato: otra cuenta, otro proveedor, un número ya pagado, un monto sobre el tope. En cada ataque el extractor lee el dato falso tal cual y JEV responde que todo está en orden. Solo quedan las reglas en código.</p>
+</div>
+
+<section class="tablero" aria-labelledby="t-arena">
+  <div class="tablero__principal">
+    <h2 id="t-arena" class="tablero__frase"><span class="cifra">{{ r.ataques|num(0) }}</span> ataques, <span class="cifra">{{ r.pagados }}</span> pagados</h2>
+    <p class="tenue">{{ r.por_mutacion|length }} tipos de ataque, cada uno solo y {{ r.parejas|num(0) }} veces en parejas. Se calcula al abrir esta página por primera vez desde el último despliegue.</p>
+  </div>
+  <dl class="tablero__cifras">
+    <div class="{{ 'tablero__mal' if r.pagados else 'tablero__bien' }}"><dt>{{ icono('check') }}Pagados</dt><dd>{{ r.pagados }}</dd></div>
+    <div><dt>{{ icono('alto') }}Frenados</dt><dd>{{ (r.decisiones.FRENAR or 0)|num(0) }}</dd></div>
+    <div><dt>{{ icono('persona') }}Escalados</dt><dd>{{ (r.decisiones.ESCALAR or 0)|num(0) }}</dd></div>
+    <div><dt>{{ icono('documento') }}Facturas base</dt><dd>{{ r.bases }}</dd></div>
+  </dl>
+</section>
+
+<section aria-labelledby="t-tipos">
+  <div class="seccion-cabeza">
+    <h2 id="t-tipos">Qué regla paró cada tipo de ataque</h2>
+    <span class="tenue">Cada ataque probado solo, sobre cada factura base donde aplica</span>
+  </div>
+  <div class="tabla-envoltura" tabindex="0" role="region" aria-labelledby="t-tipos">
+    <table>
+      <thead><tr><th scope="col">Ataque</th><th scope="col">Regla decisiva</th><th scope="col">Resultado</th></tr></thead>
+      <tbody>
+      {% for clave in r.por_mutacion %}
+        {% set det = r.detalle_por_mutacion[clave] %}
+        <tr>
+          <td>{{ r.etiquetas.get(clave, clave) }}</td>
+          <td>{% for rid, k in det.reglas.items() %}{% if not loop.first %}<br>{% endif %}<strong>{{ rid }}</strong> {{ nombres.get(rid, '') }}{% if det.reglas|length > 1 %} <span class="tenue">({{ k }})</span>{% endif %}{% endfor %}</td>
+          <td>{% for dec, k in det.decisiones.items() %}{% if not loop.first %}<br>{% endif %}<span class="estado estado--{{ dec|lower }}">{{ icono({'PAGAR': 'check', 'ESCALAR': 'persona', 'FRENAR': 'alto'}[dec]) }}{{ k }} {{ {'PAGAR': 'pagadas', 'ESCALAR': 'escaladas', 'FRENAR': 'frenadas'}[dec] }}</span>{% endfor %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="encabezado" aria-labelledby="t-como">
+  <h2 id="t-como">Cómo se arma</h2>
+  <p class="bajada">Por cada factura legítima se crea primero una variante limpia con otro número y otro monto, y se confirma contra el registro completo que el agente la pagaría ({{ r.bases_descartadas }} variantes no pasaron ese control y quedaron fuera). Sobre esa variante se aplica cada ataque. Frenar corta el pago; escalar lo deja en manos de una persona. Ninguno de los dos mueve dinero. El código está en <code>scripts/arena.py</code> y <code>tests/test_arena.py</code> lo repite en cada corrida de pruebas.</p>
+</section>
+{% endblock %}

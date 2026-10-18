@@ -28,6 +28,20 @@ gd = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(gd)
 HOY = gd.HOY
 
+ETIQUETAS = {  # lo que ve una persona en /arena
+    "cuenta_distinta": "Cuenta bancaria cambiada",
+    "proveedor_desconocido": "Proveedor que no está en el maestro",
+    "duplicado": "Número de una factura ya pagada",
+    "reemision_sufijo": "Reemisión con sufijo (-B, -REV1, BIS)",
+    "otra_moneda": "Moneda distinta a la del acuerdo",
+    "sobre_tope": "Monto sobre el tope por pago",
+    "sobre_umbral": "Monto sobre el umbral de aprobación humana",
+    "fecha_futura": "Fecha de emisión en el futuro",
+    "vencida": "Vencida hace más de 60 días",
+    "dominio_parecido": "Correo desde un dominio parecido al del proveedor",
+    "ilegible": "Documento ilegible",
+}
+
 
 def mutaciones(m: Mandato, pagadas: dict[str, list[str]]) -> dict:
     """nombre → función(datos de la extracción, caso, rnd) que devuelve (datos, canal, remitente) o None si no aplica."""
@@ -112,9 +126,13 @@ def correr(semilla: int = 20261017, parejas_por_base: int = 14) -> dict:
             ataques.append(dict(base=c["archivo"], mutacion="+".join(combo), decision=d, regla=regla))
 
     pagados = [a for a in ataques if a["decision"] == "PAGAR"]
+    solas = [a for a in ataques if "+" not in a["mutacion"]]
     return {
         "bases": bases, "bases_descartadas": descartadas, "ataques": len(ataques), "pagados": len(pagados),
-        "por_mutacion": dict(Counter(a["mutacion"] for a in ataques if "+" not in a["mutacion"])),
+        "por_mutacion": dict(Counter(a["mutacion"] for a in solas)),
+        "detalle_por_mutacion": {n: {"reglas": dict(Counter(a["regla"] for a in solas if a["mutacion"] == n).most_common()),
+                                     "decisiones": dict(Counter(a["decision"] for a in solas if a["mutacion"] == n))}
+                                 for n in muts if any(a["mutacion"] == n for a in solas)},
         "parejas": sum("+" in a["mutacion"] for a in ataques),
         "decisiones": dict(Counter(a["decision"] for a in ataques)),
         "reglas_que_frenaron": dict(Counter(a["regla"] for a in ataques).most_common()),
