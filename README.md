@@ -10,6 +10,27 @@ Después decide **PAGAR / ESCALAR / FRENAR** con reglas deterministas escritas c
 para los juicios rápidos. Cada decisión cita la regla que la causó. Un pago fuera del mandato
 necesita a una persona.
 
+## Así se ve
+
+[![Portada de Mandato: tablero de cifras y la red En vivo repitiendo el registro](docs/img/01-portada.png)](https://mandato-production.up.railway.app)
+
+*Al abrir la portada ves el registro repetirse: cada factura cruza dos lecturas y 18 controles hasta quedar pagada, por revisar o frenada.*
+
+<table>
+<tr valign="top">
+<td width="50%"><img src="docs/img/02-detalle-frenada.png" alt="Detalle de la factura F16 frenada por instrucciones ocultas"><br>La factura F16 trae instrucciones ocultas para el agente; JEV las detecta (J01) y Mandato la frena.</td>
+<td width="50%"><img src="docs/img/03-garantias.png" alt="Sección Garantías de la portada"><br>Garantías: cero pagos fuera de reglas; Mandato encadena el registro por hash, lo firma y lo ancla en Bitcoin.</td>
+</tr>
+<tr valign="top">
+<td><img src="docs/img/04-arena.png" alt="Página Arena con los ataques y la regla que paró cada uno"><br>Arena: alteramos facturas legítimas para violar el mandato y anotamos qué regla paró cada ataque.</td>
+<td><img src="docs/img/05-mandato.png" alt="Reglas de pago y beneficiarios permitidos con su riel de Blinka"><br>En <code>/mandato</code> fijas topes y presupuesto, y ves los 12 beneficiarios permitidos con su riel de Blinka.</td>
+</tr>
+<tr valign="top">
+<td><img src="docs/img/06-movil.png" alt="Portada de Mandato en un teléfono" width="260"><br>La portada en un teléfono de 390 px.</td>
+<td></td>
+</tr>
+</table>
+
 > Hackathon 30X, octubre 2026. Reto **Blinka**: "Agentes que pagan por la empresa". Equipo AI MKT (Giovanny Marín).
 > Demo en vivo: https://mandato-production.up.railway.app · Video (97 s): https://mandato-production.up.railway.app/static/mandato-demo.mp4 · Diseño completo: [`docs/SDD.md`](docs/SDD.md) · Playbook JEV: [`docs/PLAYBOOK-JEV.md`](docs/PLAYBOOK-JEV.md)
 
